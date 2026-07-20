@@ -4,10 +4,10 @@ import type { NextRequest } from "next/server";
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Check for the sandbox login cookie or any Supabase auth cookies (which start with 'sb-')
+  // Check for the sandbox login cookie or specific Supabase authenticated cookie
   const isSandboxLoggedIn = request.cookies.get("kkn_sandbox_logged_in")?.value === "true";
-  const hasSupabaseCookie = request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-"));
-  const isLoggedIn = isSandboxLoggedIn || hasSupabaseCookie;
+  const isSupabaseLoggedIn = request.cookies.get("sb-authenticated")?.value === "true";
+  const isLoggedIn = isSandboxLoggedIn || isSupabaseLoggedIn;
 
   // Core protected paths
   const protectedPaths = [

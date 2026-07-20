@@ -48,7 +48,7 @@ export default function TimelinePreview() {
             Timeline Kegiatan Terdekat
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm max-w-lg">
-            Berikut jadwal kegiatan terdekat Kelompok KKN 211 di Desa Sukaluyu. 
+            Berikut jadwal kegiatan terdekat Kelompok KKN 211 di Desa Sukaluyu.
           </p>
         </div>
         <Link
