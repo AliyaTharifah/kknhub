@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { supabase, isSandboxMode } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useAuthStore } from "@/hooks/useAuthStore";
 
 export interface Proker {
   id: string;
@@ -513,6 +514,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   addTimelineEvent: async (event) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menambah agenda timeline.");
+      return;
+    }
     if (isSandboxMode) {
       const newEvent = { ...event, id: `event-${Date.now()}` };
       set((state) => {
@@ -572,6 +577,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   updateTimelineEvent: async (id, updates) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang mengubah agenda timeline.");
+      return;
+    }
     if (isSandboxMode) {
       set((state) => {
         const next = state.timelineEvents.map((evt) =>
@@ -619,6 +628,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   deleteTimelineEvent: async (id) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menghapus agenda timeline.");
+      return;
+    }
     if (isSandboxMode) {
       set((state) => {
         const next = state.timelineEvents.filter((evt) => evt.id !== id);
@@ -644,6 +657,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   updateProker: async (id, progress, status, name, pic, deadline, location, description, members) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang mengubah Program Kerja.");
+      return;
+    }
     if (isSandboxMode) {
       set((state) => {
         const next = state.prokers.map((p) =>
@@ -760,6 +777,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   addProker: async (proker) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menambah Program Kerja.");
+      return;
+    }
     if (isSandboxMode) {
       const newProker = { ...proker, id: `proker-${Date.now()}` };
       set((state) => {
@@ -851,6 +872,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   deleteProker: async (id) => {
+    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+      toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menghapus Program Kerja.");
+      return;
+    }
     if (isSandboxMode) {
       set((state) => {
         const nextProkers = state.prokers.filter((p) => p.id !== id);
