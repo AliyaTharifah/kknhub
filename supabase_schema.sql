@@ -176,16 +176,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- 1. USERS POLICIES
-CREATE POLICY "Users can read all profiles in their KKN group" ON public.users
-    FOR SELECT TO authenticated
-    USING (
-        id = auth.uid() OR
-        EXISTS (
-            SELECT 1 FROM public.group_members gm1
-            JOIN public.group_members gm2 ON gm1.group_id = gm2.group_id
-            WHERE gm1.user_id = auth.uid() AND gm2.user_id = users.id
-        )
-    );
+CREATE POLICY "Public users can read user profiles" ON public.users
+    FOR SELECT TO public
+    USING (TRUE);
 
 CREATE POLICY "Users can update their own profile details" ON public.users
     FOR UPDATE TO authenticated
@@ -219,8 +212,8 @@ CREATE POLICY "Sekretaris can manage mapping" ON public.group_members
 
 
 -- 4. PROGRAMS (Proker) POLICIES
-CREATE POLICY "Authenticated users can select all prokers" ON public.programs
-    FOR SELECT TO authenticated
+CREATE POLICY "Public users can select all prokers" ON public.programs
+    FOR SELECT TO public
     USING (TRUE);
 
 CREATE POLICY "Sekretaris can fully manage programs" ON public.programs
@@ -229,8 +222,8 @@ CREATE POLICY "Sekretaris can fully manage programs" ON public.programs
 
 
 -- 5. TIMELINES POLICIES
-CREATE POLICY "Authenticated users can select all timelines" ON public.timelines
-    FOR SELECT TO authenticated
+CREATE POLICY "Public users can select all timelines" ON public.timelines
+    FOR SELECT TO public
     USING (TRUE);
 
 CREATE POLICY "Sekretaris can manage timelines" ON public.timelines
@@ -239,6 +232,10 @@ CREATE POLICY "Sekretaris can manage timelines" ON public.timelines
 
 
 -- 6. LOGBOOKS POLICIES
+CREATE POLICY "Public users can select finished logbooks" ON public.logbooks
+    FOR SELECT TO public
+    USING (TRUE);
+
 CREATE POLICY "Users can fully manage their own logbooks" ON public.logbooks
     FOR ALL TO authenticated
     USING (user_id = auth.uid())
@@ -252,6 +249,10 @@ CREATE POLICY "Sekretaris can view all group logbooks" ON public.logbooks
 
 
 -- 7. PHOTOS POLICIES
+CREATE POLICY "Public users can select photos" ON public.photos
+    FOR SELECT TO public
+    USING (TRUE);
+
 CREATE POLICY "Users can manage photos linked to their logbooks" ON public.photos
     FOR ALL TO authenticated
     USING (
@@ -270,11 +271,11 @@ CREATE POLICY "Sekretaris can view all photos" ON public.photos
 
 
 -- 8. DOCUMENTS & 9. MEETING NOTES POLICIES
-CREATE POLICY "Members can view files and meeting notes" ON public.documents
-    FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Public users can view files" ON public.documents
+    FOR SELECT TO public USING (TRUE);
 
-CREATE POLICY "Members can view meeting summaries" ON public.meeting_notes
-    FOR SELECT TO authenticated USING (TRUE);
+CREATE POLICY "Public users can view meeting summaries" ON public.meeting_notes
+    FOR SELECT TO public USING (TRUE);
 
 CREATE POLICY "Sekretaris can manage files" ON public.documents
     FOR ALL TO authenticated USING (public.get_user_role(auth.uid()) = 'Sekretaris');
