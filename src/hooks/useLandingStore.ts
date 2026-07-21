@@ -238,210 +238,16 @@ const saveLocalData = <T>(key: string, data: T) => {
   }
 };
 
-export const DEFAULT_PROKERS: Proker[] = [
-  {
-    id: "default-proker-1",
-    name: "Pembuatan Digitalisasi Website Desa & Portal KKNHub",
-    pic: "Aliya Tharifah",
-    deadline: "2026-08-15",
-    status: "Sedang Berjalan",
-    progress: 75,
-    location: "Posko KKN Sukaluyu",
-    description: "Mengembangkan portal sistem informasi desa dan manajemen logbook digital anggota KKN 211 Sukaluyu.",
-    members: "Aliya Tharifah, Rizky Ramadan, Sarah Az-Zahra"
-  },
-  {
-    id: "default-proker-2",
-    name: "Penyuluhan Kesehatan & Stunting Balita Posyandu",
-    pic: "Sarah Az-Zahra",
-    deadline: "2026-08-05",
-    status: "Selesai",
-    progress: 100,
-    location: "Posyandu Melati Desa Sukaluyu",
-    description: "Pemberian edukasi gizi seimbang serta pemeriksaan tumbuh kembang balita bersama kader Posyandu.",
-    members: "Sarah Az-Zahra, Budi Pratama, Maya Indah"
-  },
-  {
-    id: "default-proker-3",
-    name: "Bimbingan Belajar & Pelatihan Komputer SD",
-    pic: "Ahmad Fauzi",
-    deadline: "2026-08-10",
-    status: "Sedang Berjalan",
-    progress: 50,
-    location: "SDN 1 Sukaluyu",
-    description: "Pelatihan dasar penggunaan komputer dan bimbingan membaca/berhitung untuk siswa SD Desa Sukaluyu.",
-    members: "Ahmad Fauzi, Dini Lestari, Budi Pratama"
-  },
-  {
-    id: "default-proker-4",
-    name: "Kerja Bakti & Penghijauan Lingkungan Desa",
-    pic: "Rian Perdana",
-    deadline: "2026-08-20",
-    status: "Belum Mulai",
-    progress: 20,
-    location: "RW 03 Desa Sukaluyu",
-    description: "Penanaman 200 bibit pohon buah dan pembenahan fasilitas tempat sampah pemilahan organik/anorganik.",
-    members: "Rian Perdana, Farhan Kurniadi, Dewi Anggraini"
-  }
-];
-
-export const DEFAULT_TIMELINES: TimelineEvent[] = [
-  {
-    id: "default-timeline-1",
-    title: "Sosialisasi Program Kerja ke Perangkat Desa",
-    date: "2026-07-25",
-    time: "09:00 - 11:30",
-    description: "Paparan seluruh rencana kegiatan KKN 211 di hadapan Kepala Desa, BPD, dan Tokoh Masyarakat Sukaluyu.",
-    category: "Umum",
-    location: "Balai Desa Sukaluyu",
-    pic: "Aliya Tharifah",
-    program_id: "default-proker-1"
-  },
-  {
-    id: "default-timeline-2",
-    title: "Pelaksanaan Posyandu & Edukasi Stunting",
-    date: "2026-08-05",
-    time: "08:00 - 12:00",
-    description: "Pemeriksaan berat & tinggi badan balita dan penyuluhan gizi seimbang balita.",
-    category: "Kesehatan",
-    location: "Posyandu Melati RW 02",
-    pic: "Sarah Az-Zahra",
-    program_id: "default-proker-2"
-  },
-  {
-    id: "default-timeline-3",
-    title: "Pelatihan Literasi Digital & Komputer Dasar",
-    date: "2026-08-10",
-    time: "13:00 - 15:30",
-    description: "Mengajarkan pengenalan komputer dasar dan pemanfaatan internet sehat untuk murid SD.",
-    category: "Pendidikan",
-    location: "Labkom SDN 1 Sukaluyu",
-    pic: "Ahmad Fauzi",
-    program_id: "default-proker-3"
-  },
-  {
-    id: "default-timeline-4",
-    title: "Penanaman Bibit Pohon & Kerja Bakti",
-    date: "2026-08-20",
-    time: "07:00 - 11:00",
-    description: "Aksi hijau bersama pemuda Karang Taruna penanaman 200 bibit tanaman produktif.",
-    category: "Lingkungan",
-    location: "Area Resapan RW 03",
-    pic: "Rian Perdana",
-    program_id: "default-proker-4"
-  }
-];
-
-export const DEFAULT_LOGBOOKS: LogbookEntry[] = [
-  {
-    id: "default-log-1",
-    user_id: "user-1",
-    user_name: "Aliya Tharifah",
-    timeline_id: "default-timeline-1",
-    timeline_title: "Sosialisasi Program Kerja ke Perangkat Desa",
-    date: "2026-07-22",
-    start_time: "09:00",
-    end_time: "11:30",
-    description: "Rapat koordinasi perdana dengan Kepala Desa dan jajaran sekretariat desa mengenai teknis pelaksanaan KKN 211 Sukaluyu.",
-    location: "Balai Desa Sukaluyu",
-    status: "Selesai",
-    photos: [
-      "https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=800&q=80"
-    ],
-    created_at: "2026-07-22T12:00:00Z"
-  },
-  {
-    id: "default-log-2",
-    user_id: "user-2",
-    user_name: "Sarah Az-Zahra",
-    timeline_id: "default-timeline-2",
-    timeline_title: "Pelaksanaan Posyandu & Edukasi Stunting",
-    date: "2026-07-24",
-    start_time: "08:00",
-    end_time: "12:00",
-    description: "Pendataan dan penimbangan balita serta pembagian makanan tambahan bergizi di Posyandu Melati.",
-    location: "Posyandu Melati RW 02",
-    status: "Selesai",
-    photos: [
-      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80"
-    ],
-    created_at: "2026-07-24T13:00:00Z"
-  },
-  {
-    id: "default-log-3",
-    user_id: "user-3",
-    user_name: "Ahmad Fauzi",
-    timeline_id: "default-timeline-3",
-    timeline_title: "Pelatihan Literasi Digital & Komputer Dasar",
-    date: "2026-07-26",
-    start_time: "13:00",
-    end_time: "15:30",
-    description: "Sesi kelas komputer dasar dan bimbingan belajar gratis untuk siswa SDN 1 Sukaluyu.",
-    location: "SDN 1 Sukaluyu",
-    status: "Selesai",
-    photos: [
-      "https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=800&q=80"
-    ],
-    created_at: "2026-07-26T16:00:00Z"
-  }
-];
-
-export const DEFAULT_DOCUMENTS: DocumentItem[] = [
-  {
-    id: "default-doc-1",
-    name: "Proposal Kegiatan KKN 211 Sukaluyu.pdf",
-    category: "Proposal",
-    size: "2.4 MB",
-    uploadDate: "2026-07-21",
-    fileUrl: "#",
-    uploadedBy: "Sekretaris"
-  },
-  {
-    id: "default-doc-2",
-    name: "Struktur Organisasi & Tata Tertib Posko.pdf",
-    category: "Administrasi",
-    size: "1.1 MB",
-    uploadDate: "2026-07-21",
-    fileUrl: "#",
-    uploadedBy: "Sekretaris"
-  },
-  {
-    id: "default-doc-3",
-    name: "Laporan Mingguan KKN Minggu I.pdf",
-    category: "Laporan",
-    size: "3.5 MB",
-    uploadDate: "2026-07-25",
-    fileUrl: "#",
-    uploadedBy: "Sekretaris"
-  }
-];
-
-export const DEFAULT_NOTULEN: NotulenItem[] = [
-  {
-    id: "default-note-1",
-    title: "Rapat Perdana Pembagian Tugas Proker",
-    date: "2026-07-21",
-    time: "19:30 - 21:00",
-    location: "Posko KKN Sukaluyu",
-    attendees: "Aliya, Sarah, Ahmad, Rian, Dini, Budi",
-    agenda: "Pembagian PIC masing-masing program kerja dan penyusunan anggaran awal",
-    results: "Disepakati Aliya PIC Website, Sarah PIC Posyandu, Ahmad PIC Bimbel SD, Rian PIC Penghijauan",
-    decisions: "Setiap PIC wajib menyerahkan proposal & jadwal teknis H-2 sebelum pelaksanaan",
-    actions: "Sekretaris menyiapkan surat izin lokasi dan permohonan fasilitas ke Balai Desa"
-  }
-];
-
 export const useLandingStore = create<LandingStore>((set, get) => ({
-  prokers: DEFAULT_PROKERS,
-  timelineEvents: DEFAULT_TIMELINES,
+  prokers: [],
+  timelineEvents: [],
   galleryItems: [],
-  logbooks: DEFAULT_LOGBOOKS,
-  documents: DEFAULT_DOCUMENTS,
-  notulen: DEFAULT_NOTULEN,
-  totalMembers: 15,
-  totalLogbooks: DEFAULT_LOGBOOKS.length,
-  totalDocs: DEFAULT_LOGBOOKS.reduce((sum, l) => sum + (l.photos?.length || 0), 0) + DEFAULT_DOCUMENTS.length,
+  logbooks: [],
+  documents: [],
+  notulen: [],
+  totalMembers: 0,
+  totalLogbooks: 0,
+  totalDocs: 0,
   targetStartDate: "2026-07-21T00:00:00+07:00",
   targetEndDate: "2026-08-24T23:59:59+07:00",
   
@@ -454,58 +260,56 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   fetchLandingData: async () => {
     if (isSandboxMode) {
-      const prokers = loadLocalData<Proker[]>("kkn_prokers_store", DEFAULT_PROKERS);
-      const timelineEvents = loadLocalData<TimelineEvent[]>("kkn_timeline_store", DEFAULT_TIMELINES);
-      const logbooks = loadLocalData<LogbookEntry[]>("kkn_logbooks_store", DEFAULT_LOGBOOKS);
-      const documents = loadLocalData<DocumentItem[]>("kkn_documents_store", DEFAULT_DOCUMENTS);
-      const notulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", DEFAULT_NOTULEN);
+      const prokers = loadLocalData<Proker[]>("kkn_prokers_store", []);
+      const timelineEvents = loadLocalData<TimelineEvent[]>("kkn_timeline_store", []);
+      const logbooks = loadLocalData<LogbookEntry[]>("kkn_logbooks_store", []);
+      const documents = loadLocalData<DocumentItem[]>("kkn_documents_store", []);
+      const notulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", []);
 
-      const resolvedProkers = prokers.length > 0 ? prokers : DEFAULT_PROKERS;
-      const resolvedTimelines = timelineEvents.length > 0 ? timelineEvents : DEFAULT_TIMELINES;
-      const resolvedLogbooks = logbooks.length > 0 ? logbooks : DEFAULT_LOGBOOKS;
-      const resolvedDocs = documents.length > 0 ? documents : DEFAULT_DOCUMENTS;
-      const resolvedNotulen = notulen.length > 0 ? notulen : DEFAULT_NOTULEN;
-
-      const allLogbookPhotos = resolvedLogbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+      const allLogbookPhotos = logbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
 
       const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
-      const uniqueLogbookUsers = new Set(resolvedLogbooks.map(l => l.user_id));
+      const uniqueLogbookUsers = new Set(logbooks.map(l => l.user_id));
       const calculatedMembers = new Set([...registeredUsers, ...Array.from(uniqueLogbookUsers)]).size;
 
       set({
-        prokers: resolvedProkers,
-        timelineEvents: resolvedTimelines,
-        logbooks: resolvedLogbooks,
-        documents: resolvedDocs,
-        notulen: resolvedNotulen,
-        totalMembers: calculatedMembers > 0 ? calculatedMembers : 15,
-        totalLogbooks: resolvedLogbooks.length,
-        totalDocs: allLogbookPhotos + resolvedDocs.length,
+        prokers,
+        timelineEvents,
+        logbooks,
+        documents,
+        notulen,
+        totalMembers: calculatedMembers,
+        totalLogbooks: logbooks.length,
+        totalDocs: allLogbookPhotos + documents.length,
       });
       return;
     }
     try {
-      // 1. Fetch users for dynamic full name mappings
+      // 1. Fetch users for dynamic full name mappings & total members count across group
       const userMap = new Map<string, string>();
+      let memberCount = 0;
       try {
         const { data: usersData } = await supabase
           .from("users")
           .select("id, full_name");
-        usersData?.forEach((u) => {
-          userMap.set(u.id, u.full_name);
-        });
+        if (usersData) {
+          memberCount = usersData.length;
+          usersData.forEach((u) => {
+            userMap.set(u.id, u.full_name);
+          });
+        }
       } catch (e) {
         console.warn("Could not fetch users profile map:", e);
       }
 
-      // 2. Fetch programs
-      let finalProkers = DEFAULT_PROKERS;
+      // 2. Fetch programs (Prokers)
+      let prokersList: Proker[] = [];
       try {
         const { data: programsData, error: progError } = await supabase
           .from("programs")
           .select("*");
-        if (!progError && programsData && programsData.length > 0) {
-          finalProkers = programsData.map((p) => {
+        if (!progError && programsData) {
+          prokersList = programsData.map((p) => {
             const picName = userMap.get(p.pic_user_id || "") || p.pic_user_id || "Belum Ditentukan";
             const frontendStatus = p.status === "Berjalan" ? "Sedang Berjalan" : (p.status === "Belum Dimulai" ? "Belum Mulai" : "Selesai");
             const descDec = decodeProkerDescription(p.description);
@@ -523,17 +327,17 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
           });
         }
       } catch (e) {
-        console.warn("Programs fetch failed, using default prokers:", e);
+        console.warn("Programs fetch failed:", e);
       }
 
-      // 3. Fetch timelines
-      let finalTimelines = DEFAULT_TIMELINES;
+      // 3. Fetch timelines (Agenda Kegiatan)
+      let timelineList: TimelineEvent[] = [];
       try {
         const { data: timelinesData, error: timeError } = await supabase
           .from("timelines")
           .select("*");
-        if (!timeError && timelinesData && timelinesData.length > 0) {
-          finalTimelines = timelinesData.map((t) => {
+        if (!timeError && timelinesData) {
+          timelineList = timelinesData.map((t) => {
             const dec = decodeDescription(t.description);
             const picName = userMap.get(t.created_by || "") || "";
             const timeStr = `${t.start_time.slice(0, 5)} - ${t.end_time.slice(0, 5)}`;
@@ -551,18 +355,18 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
           });
         }
       } catch (e) {
-        console.warn("Timelines fetch failed, using default timelines:", e);
+        console.warn("Timelines fetch failed:", e);
       }
 
-      // 4. Fetch logbooks with nested photos
-      let finalLogbooks = DEFAULT_LOGBOOKS;
+      // 4. Fetch ALL logbooks with nested photos across all members
+      let logbooksList: LogbookEntry[] = [];
       try {
         const { data: logbooksData, error: logError } = await supabase
           .from("logbooks")
           .select("*, photos(image_url)");
-        if (!logError && logbooksData && logbooksData.length > 0) {
-          finalLogbooks = logbooksData.map((l) => {
-            const timelineItem = finalTimelines.find((t) => t.id === l.timeline_id);
+        if (!logError && logbooksData) {
+          logbooksList = logbooksData.map((l) => {
+            const timelineItem = timelineList.find((t) => t.id === l.timeline_id);
             const timelineTitle = timelineItem ? timelineItem.title : "Kegiatan Mandiri";
             const uploaderName = userMap.get(l.user_id) || "Anggota KKN";
             const photoUrls = (l.photos || []).map((p: any) => p.image_url);
@@ -585,17 +389,17 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
           });
         }
       } catch (e) {
-        console.warn("Logbooks fetch failed, using default logbooks:", e);
+        console.warn("Logbooks fetch failed:", e);
       }
 
       // 5. Fetch documents
-      let finalDocs = DEFAULT_DOCUMENTS;
+      let docsList: DocumentItem[] = [];
       try {
         const { data: documentsData, error: docError } = await supabase
           .from("documents")
           .select("*");
-        if (!docError && documentsData && documentsData.length > 0) {
-          finalDocs = documentsData.map((d) => {
+        if (!docError && documentsData) {
+          docsList = documentsData.map((d) => {
             const uploaderName = userMap.get(d.uploaded_by || "") || "Sekretaris";
             const catParts = d.category ? d.category.split("||") : ["Umum", "1.5 MB"];
             const category = catParts[0];
@@ -613,17 +417,17 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
           });
         }
       } catch (e) {
-        console.warn("Documents fetch failed, using default documents:", e);
+        console.warn("Documents fetch failed:", e);
       }
 
       // 6. Fetch meeting notes
-      let finalNotulen = DEFAULT_NOTULEN;
+      let notulenList: NotulenItem[] = [];
       try {
         const { data: meetingNotesData, error: noteError } = await supabase
           .from("meeting_notes")
           .select("*");
-        if (!noteError && meetingNotesData && meetingNotesData.length > 0) {
-          finalNotulen = meetingNotesData.map((m) => {
+        if (!noteError && meetingNotesData) {
+          notulenList = meetingNotesData.map((m) => {
             const locParts = m.location ? m.location.split("|||") : ["Posko KKN", "13:30 - 15:00"];
             const location = locParts[0];
             const time = locParts[1] || "13:30 - 15:00";
@@ -648,33 +452,20 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
           });
         }
       } catch (e) {
-        console.warn("Meeting notes fetch failed, using default notulen:", e);
+        console.warn("Meeting notes fetch failed:", e);
       }
 
-      // 7. Total members count
-      let memberCount = 15;
-      try {
-        const { count, error } = await supabase
-          .from("users")
-          .select("*", { count: "exact", head: true });
-        if (!error && count && count > 0) {
-          memberCount = count;
-        }
-      } catch (e) {
-        console.warn("User count failed:", e);
-      }
-
-      const totalPhotos = finalLogbooks.reduce((s, l) => s + (l.photos?.length || 0), 0);
+      const totalPhotos = logbooksList.reduce((s, l) => s + (l.photos?.length || 0), 0);
 
       set({
-        prokers: finalProkers,
-        timelineEvents: finalTimelines,
-        logbooks: finalLogbooks,
-        documents: finalDocs,
-        notulen: finalNotulen,
+        prokers: prokersList,
+        timelineEvents: timelineList,
+        logbooks: logbooksList,
+        documents: docsList,
+        notulen: notulenList,
         totalMembers: memberCount,
-        totalLogbooks: finalLogbooks.length,
-        totalDocs: totalPhotos + finalDocs.length
+        totalLogbooks: logbooksList.length,
+        totalDocs: totalPhotos + docsList.length
       });
 
       // Ensure auto group linkage so all members can view group prokers and timelines
