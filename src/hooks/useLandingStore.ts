@@ -1,7 +1,18 @@
 import { create } from "zustand";
 import { supabase, isSandboxMode } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useAuthStore } from "@/hooks/useAuthStore";
+
+const isSekretarisUser = (): boolean => {
+  if (typeof window === "undefined") return true;
+  try {
+    const saved = localStorage.getItem("kkn_session_mock");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed?.role && parsed.role !== "Sekretaris") return false;
+    }
+  } catch {}
+  return true;
+};
 
 export interface Proker {
   id: string;
@@ -514,7 +525,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   addTimelineEvent: async (event) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menambah agenda timeline.");
       return;
     }
@@ -577,7 +588,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   updateTimelineEvent: async (id, updates) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang mengubah agenda timeline.");
       return;
     }
@@ -628,7 +639,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   deleteTimelineEvent: async (id) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menghapus agenda timeline.");
       return;
     }
@@ -657,7 +668,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   updateProker: async (id, progress, status, name, pic, deadline, location, description, members) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang mengubah Program Kerja.");
       return;
     }
@@ -777,7 +788,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   addProker: async (proker) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menambah Program Kerja.");
       return;
     }
@@ -872,7 +883,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   deleteProker: async (id) => {
-    if (useAuthStore.getState().user?.role !== "Sekretaris") {
+    if (!isSekretarisUser()) {
       toast.error("Akses ditolak: Hanya Sekretaris yang memiliki wewenang menghapus Program Kerja.");
       return;
     }
@@ -1288,22 +1299,25 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   initializeStats: async () => {
-    if (isSandboxMode) {
-      const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
-      const uniqueLogbookUsers = new Set(get().logbooks.map(l => l.user_id));
-      const totalCount = new Set([...registeredUsers, ...Array.from(uniqueLogbookUsers)]).size;
-      set({ totalMembers: totalCount });
-      return;
-    }
-    try {
-      const { count, error } = await supabase
-        .from("users")
-        .select("*", { count: "exact", head: true });
-      if (!error && count !== null) {
-        set({ totalMembers: count });
+    const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
+    const uniqueLogbookUsers = new Set(get().logbooks.map(l => l.user_id).filter(Boolean));
+    let dbUserIds: string[] = [];
+
+    if (!isSandboxMode) {
+      try {
+        const { data: usersData } = await supabase
+          .from("users")
+          .select("id");
+        if (usersData) {
+          dbUserIds = usersData.map((u) => u.id);
+        }
+      } catch (e) {
+        console.error("Gagal inisialisasi stats anggota:", e);
       }
-    } catch (e) {
-      console.error("Gagal inisialisasi stats anggota:", e);
     }
+
+    const uniqueSet = new Set([...dbUserIds, ...registeredUsers, ...Array.from(uniqueLogbookUsers)]);
+    const totalCount = uniqueSet.size > 0 ? uniqueSet.size : 1;
+    set({ totalMembers: totalCount });
   },
 }));
