@@ -494,20 +494,20 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       }
     }
 
-    // Seamlessly merge database items & local storage items
-    const mergedProkers = mergeData(dbProkers, localProkers);
-    const mergedTimelines = mergeData(dbTimelines, localTimelines);
-    const mergedLogbooks = mergeData(dbLogbooks, localLogbooks);
-    const mergedDocs = mergeData(dbDocuments, localDocuments);
-    const mergedNotulen = mergeData(dbNotulen, localNotulen);
+    // Seamlessly merge database items & local storage items based on sandbox mode
+    const mergedProkers = isSandboxMode ? localProkers : dbProkers;
+    const mergedTimelines = isSandboxMode ? localTimelines : dbTimelines;
+    const mergedLogbooks = isSandboxMode ? localLogbooks : dbLogbooks;
+    const mergedDocs = isSandboxMode ? localDocuments : dbDocuments;
+    const mergedNotulen = isSandboxMode ? localNotulen : dbNotulen;
 
-    // Calculate unique total members across DB users, local registered users, and logbook authors
-    const uniqueMembers = new Set([
-      ...dbUserIds,
-      ...registeredUsers,
-      ...mergedLogbooks.map((l) => l.user_id).filter(Boolean)
-    ]);
-    const totalMemberCount = Math.max(uniqueMembers.size, 15);
+    // Calculate unique total members across DB users or local registered users and logbook authors
+    const uniqueMembers = new Set(
+      isSandboxMode
+        ? [...registeredUsers, ...mergedLogbooks.map((l) => l.user_id).filter(Boolean)]
+        : [...dbUserIds, ...mergedLogbooks.map((l) => l.user_id).filter(Boolean)]
+    );
+    const totalMemberCount = isSandboxMode ? Math.max(uniqueMembers.size, 15) : uniqueMembers.size;
 
     // Calculate total photos count from all merged logbooks
     const totalPhotos = mergedLogbooks.reduce((s, l) => s + (l.photos?.length || 0), 0);
@@ -1334,8 +1334,12 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       }
     }
 
-    const uniqueSet = new Set([...dbUserIds, ...registeredUsers, ...Array.from(uniqueLogbookUsers)]);
-    const totalCount = Math.max(uniqueSet.size, 15);
+    const uniqueSet = new Set(
+      isSandboxMode
+        ? [...registeredUsers, ...Array.from(uniqueLogbookUsers)]
+        : [...dbUserIds, ...Array.from(uniqueLogbookUsers)]
+    );
+    const totalCount = isSandboxMode ? Math.max(uniqueSet.size, 15) : uniqueSet.size;
     set({ totalMembers: totalCount });
   },
 }));

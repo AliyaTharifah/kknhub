@@ -238,8 +238,8 @@ export default function LogbookPage() {
     const timelineTitle = matchedTimeline ? matchedTimeline.title : "Kegiatan Mandiri";
 
     const payload = {
-      user_id: user?.id || "mock-uuid-anggota",
-      user_name: user?.full_name || "Fathur Rahman",
+      user_id: editingLogbook ? editingLogbook.user_id : (user?.id || "mock-uuid-anggota"),
+      user_name: editingLogbook ? editingLogbook.user_name : (user?.full_name || "Fathur Rahman"),
       timeline_id: data.timeline_id,
       timeline_title: timelineTitle,
       date: data.date,
@@ -379,8 +379,8 @@ export default function LogbookPage() {
                         )}
                       </div>
 
-                      {/* Action buttons (only owner can modify) */}
-                      {log.user_id === user?.id && (
+                      {/* Action buttons (owner or secretary can modify) */}
+                      {(log.user_id === user?.id || isSecretary) && (
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => openEditDialog(log)}

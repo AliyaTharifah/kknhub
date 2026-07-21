@@ -24,6 +24,8 @@ import { useLandingStore } from "@/hooks/useLandingStore";
 import { isSandboxMode } from "@/lib/supabase";
 import GlobalSearch from "@/components/GlobalSearch";
 
+import ThemeToggle from "@/components/ThemeToggle";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading, logout, initializeAuth } = useAuthStore();
   const fetchLandingData = useLandingStore((state) => state.fetchLandingData);
@@ -128,24 +130,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User Card & Logout Bottom Column */}
         <div className="space-y-4 pt-4 border-t border-slate-200/50 dark:border-slate-850">
-          <Link href="/profile" className="flex items-center gap-3 px-1 hover:opacity-80 transition-opacity">
-            <div className="h-10 w-10 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-extrabold flex items-center justify-center shadow-sm text-sm">
-              {user.photo_url ? (
-                <img src={user.photo_url} alt={user.full_name} className="h-full w-full object-cover" />
-              ) : (
-                user.full_name.slice(0, 2).toUpperCase()
-              )}
-            </div>
-            <div className="flex flex-col truncate">
-              <span className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight truncate">
-                {user.full_name}
-              </span>
-              <span className="inline-flex items-center gap-1 mt-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">
-                <UserCheck className="h-3 w-3 text-kkn-purple" />
-                {user.role}
-              </span>
-            </div>
-          </Link>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <Link href="/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity truncate">
+              <div className="h-10 w-10 shrink-0 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-indigo-500 text-white font-extrabold flex items-center justify-center shadow-sm text-sm">
+                {user.photo_url ? (
+                  <img src={user.photo_url} alt={user.full_name} className="h-full w-full object-cover" />
+                ) : (
+                  user.full_name.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <div className="flex flex-col truncate">
+                <span className="text-xs font-extrabold text-slate-800 dark:text-white leading-tight truncate">
+                  {user.full_name}
+                </span>
+                <span className="inline-flex items-center gap-1 mt-0.5 text-[9px] font-bold text-slate-400 uppercase tracking-wider leading-none">
+                  <UserCheck className="h-3 w-3 text-kkn-purple" />
+                  {user.role}
+                </span>
+              </div>
+            </Link>
+            <ThemeToggle />
+          </div>
 
           <button
             onClick={handleLogout}
@@ -170,12 +175,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
 
-          <button
-            onClick={() => setMobileMenuOpen(true)}
-            className="p-1 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
-          >
-            <Menu className="h-5.5 w-5.5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-1 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+            >
+              <Menu className="h-5.5 w-5.5" />
+            </button>
+          </div>
         </header>
 
         {/* Actual children page */}

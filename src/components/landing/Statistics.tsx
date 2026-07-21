@@ -15,7 +15,10 @@ function CountUp({ end, suffix = "", duration = 1000 }: { end: number; suffix?: 
     
     let start = 0;
     const endValue = end;
-    if (endValue === 0) return;
+    if (endValue === 0) {
+      setCount(0);
+      return;
+    }
 
     const stepTime = Math.max(Math.floor(duration / endValue), 10);
     const timer = setInterval(() => {

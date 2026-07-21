@@ -25,7 +25,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative min-h-[90vh] pt-32 pb-16 flex items-center overflow-hidden bg-gradient-to-b from-blue-50/50 via-purple-50/20 to-transparent dark:from-slate-900 dark:via-purple-950/10 dark:to-transparent">
+    <section className="relative min-h-[90vh] pt-32 pb-16 flex items-center overflow-hidden bg-gradient-to-b from-blue-50/50 via-purple-50/20 to-transparent dark:from-slate-900 dark:via-slate-955/30 dark:to-slate-955">
       {/* Dynamic Background Gradients */}
       <div className="absolute top-1/4 left-1/10 w-72 h-72 bg-blue-400/20 dark:bg-blue-600/10 rounded-full filter blur-3xl -z-10 animate-pulse duration-5000" />
       <div className="absolute bottom-1/4 right-1/10 w-96 h-96 bg-purple-400/20 dark:bg-purple-600/10 rounded-full filter blur-3xl -z-10 animate-pulse duration-7000" />

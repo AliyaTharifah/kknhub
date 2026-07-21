@@ -6,6 +6,8 @@ import { Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { buttonVariants } from "@/components/ui/button";
 
+import ThemeToggle from "@/components/ThemeToggle";
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -69,6 +71,7 @@ export default function Navbar() {
 
           {/* Right Action Button */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             <Link
               href="#dashboard-preview"
               className={buttonVariants({
@@ -88,8 +91,9 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden">
+          {/* Mobile Menu & Theme Toggle */}
+          <div className="flex md:hidden items-center gap-3">
+            <ThemeToggle />
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:text-white dark:hover:bg-slate-800 transition-colors focus:outline-none"

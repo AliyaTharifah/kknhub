@@ -247,6 +247,12 @@ CREATE POLICY "Sekretaris can view all group logbooks" ON public.logbooks
         public.get_user_role(auth.uid()) = 'Sekretaris'
     );
 
+CREATE POLICY "Sekretaris can fully manage all logbooks" ON public.logbooks
+    FOR ALL TO authenticated
+    USING (
+        public.get_user_role(auth.uid()) = 'Sekretaris'
+    );
+
 
 -- 7. PHOTOS POLICIES
 CREATE POLICY "Public users can select photos" ON public.photos
@@ -265,6 +271,12 @@ CREATE POLICY "Users can manage photos linked to their logbooks" ON public.photo
 
 CREATE POLICY "Sekretaris can view all photos" ON public.photos
     FOR SELECT TO authenticated
+    USING (
+        public.get_user_role(auth.uid()) = 'Sekretaris'
+    );
+
+CREATE POLICY "Sekretaris can manage all photos" ON public.photos
+    FOR ALL TO authenticated
     USING (
         public.get_user_role(auth.uid()) = 'Sekretaris'
     );
