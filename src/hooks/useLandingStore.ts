@@ -821,13 +821,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       set((state) => {
         const nextLogbooks = [...state.logbooks, newLog];
         saveLocalData("kkn_logbooks_store", nextLogbooks);
-        const finishedPhotos = nextLogbooks
-          .filter((l) => l.status === "Selesai")
-          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        const allPhotos = nextLogbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
           logbooks: nextLogbooks,
           totalLogbooks: nextLogbooks.length,
-          totalDocs: finishedPhotos + state.documents.length,
+          totalDocs: allPhotos + state.documents.length,
         };
       });
       return;
@@ -876,11 +874,15 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         created_at: data.created_at
       };
 
-      set((state) => ({
-        logbooks: [...state.logbooks, newLog],
-        totalLogbooks: state.totalLogbooks + 1,
-        totalDocs: entry.status === "Selesai" ? state.totalDocs + entry.photos.length : state.totalDocs,
-      }));
+      set((state) => {
+        const nextLogs = [...state.logbooks, newLog];
+        const allPhotos = nextLogs.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        return {
+          logbooks: nextLogs,
+          totalLogbooks: nextLogs.length,
+          totalDocs: allPhotos + state.documents.length,
+        };
+      });
       toast.success("Logbook harian berhasil ditambahkan!");
     } catch (e) {
       console.error(e);
@@ -893,12 +895,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       set((state) => {
         const nextLogbooks = state.logbooks.map((l) => (l.id === id ? { ...l, ...updates } : l));
         saveLocalData("kkn_logbooks_store", nextLogbooks);
-        const finishedPhotos = nextLogbooks
-          .filter((l) => l.status === "Selesai")
-          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        const allPhotos = nextLogbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
           logbooks: nextLogbooks,
-          totalDocs: finishedPhotos + state.documents.length,
+          totalDocs: allPhotos + state.documents.length,
         };
       });
       return;
@@ -931,18 +931,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       }
 
       set((state) => {
-        const oldLog = state.logbooks.find((l) => l.id === id);
-        const wasDraft = oldLog?.status === "Draft";
-        const isSelesai = updates.status === "Selesai" || (oldLog?.status === "Selesai" && updates.status !== "Draft");
-        
-        let docDiff = 0;
-        if (wasDraft && isSelesai && updates.photos) {
-          docDiff = updates.photos.length;
-        }
-        
+        const nextLogs = state.logbooks.map((l) => (l.id === id ? { ...l, ...updates } : l));
+        const allPhotos = nextLogs.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
-          logbooks: state.logbooks.map((l) => (l.id === id ? { ...l, ...updates } : l)),
-          totalDocs: state.totalDocs + docDiff,
+          logbooks: nextLogs,
+          totalDocs: allPhotos + state.documents.length,
         };
       });
       toast.success("Logbook berhasil diperbarui!");
@@ -957,13 +950,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       set((state) => {
         const nextLogbooks = state.logbooks.filter((l) => l.id !== id);
         saveLocalData("kkn_logbooks_store", nextLogbooks);
-        const finishedPhotos = nextLogbooks
-          .filter((l) => l.status === "Selesai")
-          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        const allPhotos = nextLogbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
           logbooks: nextLogbooks,
           totalLogbooks: nextLogbooks.length,
-          totalDocs: finishedPhotos + state.documents.length,
+          totalDocs: allPhotos + state.documents.length,
         };
       });
       return;
@@ -976,13 +967,12 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       if (error) throw error;
 
       set((state) => {
-        const log = state.logbooks.find((l) => l.id === id);
-        const isSelesai = log?.status === "Selesai";
-        const docCount = log?.photos?.length || 0;
+        const nextLogs = state.logbooks.filter((l) => l.id !== id);
+        const allPhotos = nextLogs.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
-          logbooks: state.logbooks.filter((l) => l.id !== id),
-          totalLogbooks: state.totalLogbooks - 1,
-          totalDocs: isSelesai ? Math.max(0, state.totalDocs - docCount) : state.totalDocs,
+          logbooks: nextLogs,
+          totalLogbooks: nextLogs.length,
+          totalDocs: allPhotos + state.documents.length,
         };
       });
       toast.success("Logbook berhasil dihapus!");

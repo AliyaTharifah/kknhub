@@ -13,12 +13,12 @@ export default function GalleryPreview() {
   const items = useMemo(() => {
     const list: GalleryItem[] = [];
     logbooks.forEach((log) => {
-      if (log.status === "Selesai" && log.photos) {
+      if (log.photos && log.photos.length > 0) {
         log.photos.forEach((photoUrl, idx) => {
           list.push({
             id: `${log.id}-photo-${idx}`,
-            title: log.timeline_title,
-            description: log.description,
+            title: log.timeline_title || "Dokumentasi Kegiatan",
+            description: log.description || "",
             imageUrl: photoUrl
           });
         });
