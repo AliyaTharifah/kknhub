@@ -238,6 +238,17 @@ const saveLocalData = <T>(key: string, data: T) => {
   }
 };
 
+const mergeData = <T extends { id: string }>(primary: T[], secondary: T[]): T[] => {
+  const map = new Map<string, T>();
+  secondary.forEach((item) => {
+    if (item && item.id) map.set(item.id, item);
+  });
+  primary.forEach((item) => {
+    if (item && item.id) map.set(item.id, item);
+  });
+  return Array.from(map.values());
+};
+
 export const useLandingStore = create<LandingStore>((set, get) => ({
   prokers: [],
   timelineEvents: [],
@@ -259,226 +270,246 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   fetchLandingData: async () => {
-    if (isSandboxMode) {
-      const prokers = loadLocalData<Proker[]>("kkn_prokers_store", []);
-      const timelineEvents = loadLocalData<TimelineEvent[]>("kkn_timeline_store", []);
-      const logbooks = loadLocalData<LogbookEntry[]>("kkn_logbooks_store", []);
-      const documents = loadLocalData<DocumentItem[]>("kkn_documents_store", []);
-      const notulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", []);
+    // 1. Always load local data saved across accounts on client
+    const localProkers = loadLocalData<Proker[]>("kkn_prokers_store", []);
+    const localTimelines = loadLocalData<TimelineEvent[]>("kkn_timeline_store", []);
+    const localLogbooks = loadLocalData<LogbookEntry[]>("kkn_logbooks_store", []);
+    const localDocuments = loadLocalData<DocumentItem[]>("kkn_documents_store", []);
+    const localNotulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", []);
+    const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
 
-      const allLogbookPhotos = logbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+    let dbProkers: Proker[] = [];
+    let dbTimelines: TimelineEvent[] = [];
+    let dbLogbooks: LogbookEntry[] = [];
+    let dbDocuments: DocumentItem[] = [];
+    let dbNotulen: NotulenItem[] = [];
+    let dbUserIds: string[] = [];
 
-      const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
-      const uniqueLogbookUsers = new Set(logbooks.map(l => l.user_id));
-      const calculatedMembers = new Set([...registeredUsers, ...Array.from(uniqueLogbookUsers)]).size;
+    if (!isSandboxMode) {
+      try {
+        // Fetch users for full name mappings & unique IDs
+        const userMap = new Map<string, string>();
+        try {
+          const { data: usersData } = await supabase
+            .from("users")
+            .select("id, full_name");
+          if (usersData) {
+            usersData.forEach((u) => {
+              userMap.set(u.id, u.full_name);
+              dbUserIds.push(u.id);
+            });
+          }
+        } catch (e) {
+          console.warn("Could not fetch users profile map:", e);
+        }
 
-      set({
-        prokers,
-        timelineEvents,
-        logbooks,
-        documents,
-        notulen,
-        totalMembers: calculatedMembers,
-        totalLogbooks: logbooks.length,
-        totalDocs: allLogbookPhotos + documents.length,
-      });
-      return;
+        // Fetch programs (Prokers)
+        try {
+          const { data: programsData, error: progError } = await supabase
+            .from("programs")
+            .select("*");
+          if (!progError && programsData) {
+            dbProkers = programsData.map((p) => {
+              const picName = userMap.get(p.pic_user_id || "") || p.pic_user_id || "Belum Ditentukan";
+              const frontendStatus = p.status === "Berjalan" ? "Sedang Berjalan" : (p.status === "Belum Dimulai" ? "Belum Mulai" : "Selesai");
+              const descDec = decodeProkerDescription(p.description);
+              return {
+                id: p.id,
+                name: p.title,
+                pic: picName,
+                deadline: p.deadline,
+                status: frontendStatus as any,
+                progress: p.progress || 0,
+                location: p.location || "",
+                description: descDec.description,
+                members: descDec.members
+              };
+            });
+          }
+        } catch (e) {
+          console.warn("Programs fetch failed:", e);
+        }
+
+        // Fetch timelines (Agenda Kegiatan)
+        try {
+          const { data: timelinesData, error: timeError } = await supabase
+            .from("timelines")
+            .select("*");
+          if (!timeError && timelinesData) {
+            dbTimelines = timelinesData.map((t) => {
+              const dec = decodeDescription(t.description);
+              const picName = userMap.get(t.created_by || "") || "";
+              const timeStr = `${(t.start_time || "08:00").slice(0, 5)} - ${(t.end_time || "10:00").slice(0, 5)}`;
+              return {
+                id: t.id,
+                title: t.title,
+                date: t.date,
+                time: timeStr,
+                description: dec.description,
+                category: dec.category,
+                location: t.location || "",
+                pic: picName,
+                program_id: t.program_id || undefined
+              };
+            });
+          }
+        } catch (e) {
+          console.warn("Timelines fetch failed:", e);
+        }
+
+        // Fetch ALL logbooks with nested photos across all members
+        try {
+          const { data: logbooksData, error: logError } = await supabase
+            .from("logbooks")
+            .select("*, photos(image_url)");
+          if (!logError && logbooksData) {
+            dbLogbooks = logbooksData.map((l) => {
+              const timelineItem = dbTimelines.find((t) => t.id === l.timeline_id);
+              const timelineTitle = timelineItem ? timelineItem.title : "Kegiatan Mandiri";
+              const uploaderName = userMap.get(l.user_id) || "Anggota KKN";
+              const photoUrls = (l.photos || []).map((p: any) => p.image_url);
+
+              return {
+                id: l.id,
+                user_id: l.user_id,
+                user_name: uploaderName,
+                timeline_id: l.timeline_id || "",
+                timeline_title: timelineTitle,
+                date: l.date,
+                start_time: (l.start_time || "08:00").slice(0, 5),
+                end_time: (l.end_time || "10:00").slice(0, 5),
+                description: l.description || "",
+                location: l.location || "",
+                status: l.status as any,
+                photos: photoUrls,
+                created_at: l.created_at
+              };
+            });
+          } else if (logError) {
+            const { data: simpleLogs } = await supabase.from("logbooks").select("*");
+            if (simpleLogs) {
+              dbLogbooks = simpleLogs.map((l) => ({
+                id: l.id,
+                user_id: l.user_id,
+                user_name: userMap.get(l.user_id) || "Anggota KKN",
+                timeline_id: l.timeline_id || "",
+                timeline_title: "Kegiatan Mandiri",
+                date: l.date,
+                start_time: (l.start_time || "08:00").slice(0, 5),
+                end_time: (l.end_time || "10:00").slice(0, 5),
+                description: l.description || "",
+                location: l.location || "",
+                status: l.status as any,
+                photos: [],
+                created_at: l.created_at
+              }));
+            }
+          }
+        } catch (e) {
+          console.warn("Logbooks fetch failed:", e);
+        }
+
+        // Fetch documents
+        try {
+          const { data: documentsData, error: docError } = await supabase
+            .from("documents")
+            .select("*");
+          if (!docError && documentsData) {
+            dbDocuments = documentsData.map((d) => {
+              const uploaderName = userMap.get(d.uploaded_by || "") || "Sekretaris";
+              const catParts = d.category ? d.category.split("||") : ["Umum", "1.5 MB"];
+              const category = catParts[0];
+              const size = catParts[1] || "1.5 MB";
+              
+              return {
+                id: d.id,
+                name: d.title,
+                category: category,
+                size: size,
+                uploadDate: (d.created_at || "").split("T")[0],
+                fileUrl: d.file_url,
+                uploadedBy: uploaderName
+              };
+            });
+          }
+        } catch (e) {
+          console.warn("Documents fetch failed:", e);
+        }
+
+        // Fetch meeting notes
+        try {
+          const { data: meetingNotesData, error: noteError } = await supabase
+            .from("meeting_notes")
+            .select("*");
+          if (!noteError && meetingNotesData) {
+            dbNotulen = meetingNotesData.map((m) => {
+              const locParts = m.location ? m.location.split("|||") : ["Posko KKN", "13:30 - 15:00"];
+              const location = locParts[0];
+              const time = locParts[1] || "13:30 - 15:00";
+              
+              const discParts = m.discussion ? m.discussion.split("|||") : ["", ""];
+              const agenda = discParts[0];
+              const results = discParts[1] || "";
+              const attendeesStr = m.participants ? m.participants.join(", ") : "";
+
+              return {
+                id: m.id,
+                title: m.title,
+                date: m.meeting_date,
+                time: time,
+                location: location,
+                attendees: attendeesStr,
+                agenda: agenda,
+                results: results,
+                decisions: m.decision || "",
+                actions: m.follow_up || ""
+              };
+            });
+          }
+        } catch (e) {
+          console.warn("Meeting notes fetch failed:", e);
+        }
+
+        // Ensure auto group linkage
+        try {
+          const groupId = await getOrCreateGroupId();
+          await linkAllUsersToGroup(groupId);
+        } catch (e) {
+          console.warn("Auto group link skipped:", e);
+        }
+      } catch (e) {
+        console.error("Gagal sinkronisasi data dari database:", e);
+      }
     }
-    try {
-      // 1. Fetch users for dynamic full name mappings & total members count across group
-      const userMap = new Map<string, string>();
-      let memberCount = 0;
-      try {
-        const { data: usersData } = await supabase
-          .from("users")
-          .select("id, full_name");
-        if (usersData) {
-          memberCount = usersData.length;
-          usersData.forEach((u) => {
-            userMap.set(u.id, u.full_name);
-          });
-        }
-      } catch (e) {
-        console.warn("Could not fetch users profile map:", e);
-      }
 
-      // 2. Fetch programs (Prokers)
-      let prokersList: Proker[] = [];
-      try {
-        const { data: programsData, error: progError } = await supabase
-          .from("programs")
-          .select("*");
-        if (!progError && programsData) {
-          prokersList = programsData.map((p) => {
-            const picName = userMap.get(p.pic_user_id || "") || p.pic_user_id || "Belum Ditentukan";
-            const frontendStatus = p.status === "Berjalan" ? "Sedang Berjalan" : (p.status === "Belum Dimulai" ? "Belum Mulai" : "Selesai");
-            const descDec = decodeProkerDescription(p.description);
-            return {
-              id: p.id,
-              name: p.title,
-              pic: picName,
-              deadline: p.deadline,
-              status: frontendStatus as any,
-              progress: p.progress || 0,
-              location: p.location || "",
-              description: descDec.description,
-              members: descDec.members
-            };
-          });
-        }
-      } catch (e) {
-        console.warn("Programs fetch failed:", e);
-      }
+    // Seamlessly merge database items & local storage items
+    const mergedProkers = mergeData(dbProkers, localProkers);
+    const mergedTimelines = mergeData(dbTimelines, localTimelines);
+    const mergedLogbooks = mergeData(dbLogbooks, localLogbooks);
+    const mergedDocs = mergeData(dbDocuments, localDocuments);
+    const mergedNotulen = mergeData(dbNotulen, localNotulen);
 
-      // 3. Fetch timelines (Agenda Kegiatan)
-      let timelineList: TimelineEvent[] = [];
-      try {
-        const { data: timelinesData, error: timeError } = await supabase
-          .from("timelines")
-          .select("*");
-        if (!timeError && timelinesData) {
-          timelineList = timelinesData.map((t) => {
-            const dec = decodeDescription(t.description);
-            const picName = userMap.get(t.created_by || "") || "";
-            const timeStr = `${t.start_time.slice(0, 5)} - ${t.end_time.slice(0, 5)}`;
-            return {
-              id: t.id,
-              title: t.title,
-              date: t.date,
-              time: timeStr,
-              description: dec.description,
-              category: dec.category,
-              location: t.location || "",
-              pic: picName,
-              program_id: t.program_id || undefined
-            };
-          });
-        }
-      } catch (e) {
-        console.warn("Timelines fetch failed:", e);
-      }
+    // Calculate unique total members across DB users, local registered users, and logbook authors
+    const uniqueMembers = new Set([
+      ...dbUserIds,
+      ...registeredUsers,
+      ...mergedLogbooks.map((l) => l.user_id).filter(Boolean)
+    ]);
+    const totalMemberCount = uniqueMembers.size > 0 ? uniqueMembers.size : 1;
 
-      // 4. Fetch ALL logbooks with nested photos across all members
-      let logbooksList: LogbookEntry[] = [];
-      try {
-        const { data: logbooksData, error: logError } = await supabase
-          .from("logbooks")
-          .select("*, photos(image_url)");
-        if (!logError && logbooksData) {
-          logbooksList = logbooksData.map((l) => {
-            const timelineItem = timelineList.find((t) => t.id === l.timeline_id);
-            const timelineTitle = timelineItem ? timelineItem.title : "Kegiatan Mandiri";
-            const uploaderName = userMap.get(l.user_id) || "Anggota KKN";
-            const photoUrls = (l.photos || []).map((p: any) => p.image_url);
+    // Calculate total photos count from all merged logbooks
+    const totalPhotos = mergedLogbooks.reduce((s, l) => s + (l.photos?.length || 0), 0);
 
-            return {
-              id: l.id,
-              user_id: l.user_id,
-              user_name: uploaderName,
-              timeline_id: l.timeline_id || "",
-              timeline_title: timelineTitle,
-              date: l.date,
-              start_time: l.start_time.slice(0, 5),
-              end_time: l.end_time.slice(0, 5),
-              description: l.description || "",
-              location: l.location || "",
-              status: l.status as any,
-              photos: photoUrls,
-              created_at: l.created_at
-            };
-          });
-        }
-      } catch (e) {
-        console.warn("Logbooks fetch failed:", e);
-      }
-
-      // 5. Fetch documents
-      let docsList: DocumentItem[] = [];
-      try {
-        const { data: documentsData, error: docError } = await supabase
-          .from("documents")
-          .select("*");
-        if (!docError && documentsData) {
-          docsList = documentsData.map((d) => {
-            const uploaderName = userMap.get(d.uploaded_by || "") || "Sekretaris";
-            const catParts = d.category ? d.category.split("||") : ["Umum", "1.5 MB"];
-            const category = catParts[0];
-            const size = catParts[1] || "1.5 MB";
-            
-            return {
-              id: d.id,
-              name: d.title,
-              category: category,
-              size: size,
-              uploadDate: d.created_at.split("T")[0],
-              fileUrl: d.file_url,
-              uploadedBy: uploaderName
-            };
-          });
-        }
-      } catch (e) {
-        console.warn("Documents fetch failed:", e);
-      }
-
-      // 6. Fetch meeting notes
-      let notulenList: NotulenItem[] = [];
-      try {
-        const { data: meetingNotesData, error: noteError } = await supabase
-          .from("meeting_notes")
-          .select("*");
-        if (!noteError && meetingNotesData) {
-          notulenList = meetingNotesData.map((m) => {
-            const locParts = m.location ? m.location.split("|||") : ["Posko KKN", "13:30 - 15:00"];
-            const location = locParts[0];
-            const time = locParts[1] || "13:30 - 15:00";
-            
-            const discParts = m.discussion ? m.discussion.split("|||") : ["", ""];
-            const agenda = discParts[0];
-            const results = discParts[1] || "";
-            const attendeesStr = m.participants ? m.participants.join(", ") : "";
-
-            return {
-              id: m.id,
-              title: m.title,
-              date: m.meeting_date,
-              time: time,
-              location: location,
-              attendees: attendeesStr,
-              agenda: agenda,
-              results: results,
-              decisions: m.decision || "",
-              actions: m.follow_up || ""
-            };
-          });
-        }
-      } catch (e) {
-        console.warn("Meeting notes fetch failed:", e);
-      }
-
-      const totalPhotos = logbooksList.reduce((s, l) => s + (l.photos?.length || 0), 0);
-
-      set({
-        prokers: prokersList,
-        timelineEvents: timelineList,
-        logbooks: logbooksList,
-        documents: docsList,
-        notulen: notulenList,
-        totalMembers: memberCount,
-        totalLogbooks: logbooksList.length,
-        totalDocs: totalPhotos + docsList.length
-      });
-
-      // Ensure auto group linkage so all members can view group prokers and timelines
-      try {
-        const groupId = await getOrCreateGroupId();
-        await linkAllUsersToGroup(groupId);
-      } catch (e) {
-        console.warn("Auto group link skipped:", e);
-      }
-
-    } catch (e) {
-      console.error("Gagal sinkronisasi data dari database:", e);
-    }
+    set({
+      prokers: mergedProkers,
+      timelineEvents: mergedTimelines,
+      logbooks: mergedLogbooks,
+      documents: mergedDocs,
+      notulen: mergedNotulen,
+      totalMembers: totalMemberCount,
+      totalLogbooks: mergedLogbooks.length,
+      totalDocs: totalPhotos + mergedDocs.length
+    });
   },
 
   addTimelineEvent: async (event) => {
