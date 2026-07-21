@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Check for the sandbox login cookie or specific Supabase authenticated cookie
@@ -19,6 +19,7 @@ export function middleware(request: NextRequest) {
     "/dokumen",
     "/notulen",
     "/laporan",
+    "/profile",
   ];
 
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
@@ -48,8 +49,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico, next.svg, vercel.svg (favicons / static assets)
-     * - public assets like illustration images (.png, .jpg)
+     * - public assets like illustration images (.png, .jpg, .jpeg, .svg, .webp)
      */
-    "/((?!api|_next/static|_next/image|favicon.ico|next.svg|vercel.svg|.*\\.png|.*\\.jpg).*)",
+    "/((?!api|_next/static|_next/image|favicon.ico|next.svg|vercel.svg|.*\\.png|.*\\.jpg|.*\\.jpeg|.*\\.webp|.*\\.svg).*)",
   ],
 };

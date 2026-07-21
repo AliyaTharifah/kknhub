@@ -23,7 +23,7 @@ export default function Home() {
       <main className="flex-grow space-y-24 md:space-y-32 pb-24">
         
         {/* Status Hub (Countdown & Circular Progress) */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
             <Countdown />
             <ProgressCircle />
@@ -31,7 +31,7 @@ export default function Home() {
         </section>
 
         {/* Statistics Grid */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="dashboard-preview" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 scroll-mt-24">
           <Statistics />
         </section>
 

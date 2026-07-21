@@ -219,6 +219,25 @@ const decodeProkerDescription = (dbDescription: string | null) => {
   return { description: dbDescription, members: "" };
 };
 
+const loadLocalData = <T>(key: string, defaultValue: T): T => {
+  if (typeof window === "undefined") return defaultValue;
+  try {
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : defaultValue;
+  } catch {
+    return defaultValue;
+  }
+};
+
+const saveLocalData = <T>(key: string, data: T) => {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (e) {
+    console.error("Failed to save local data:", e);
+  }
+};
+
 export const useLandingStore = create<LandingStore>((set, get) => ({
   prokers: [],
   timelineEvents: [],
@@ -240,7 +259,29 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   },
 
   fetchLandingData: async () => {
-    if (isSandboxMode) return;
+    if (isSandboxMode) {
+      const prokers = loadLocalData<Proker[]>("kkn_prokers_store", []);
+      const timelineEvents = loadLocalData<TimelineEvent[]>("kkn_timeline_store", []);
+      const logbooks = loadLocalData<LogbookEntry[]>("kkn_logbooks_store", []);
+      const documents = loadLocalData<DocumentItem[]>("kkn_documents_store", []);
+      const notulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", []);
+
+      const finishedLogbookPhotos = logbooks
+        .filter((l) => l.status === "Selesai")
+        .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+
+      set({
+        prokers,
+        timelineEvents,
+        logbooks,
+        documents,
+        notulen,
+        totalMembers: 15,
+        totalLogbooks: logbooks.length,
+        totalDocs: finishedLogbookPhotos + documents.length,
+      });
+      return;
+    }
     try {
       // 1. Fetch users for dynamic full name mappings
       const { data: usersData, error: usersError } = await supabase
@@ -418,7 +459,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   addTimelineEvent: async (event) => {
     if (isSandboxMode) {
       const newEvent = { ...event, id: `event-${Date.now()}` };
-      set((state) => ({ timelineEvents: [...state.timelineEvents, newEvent] }));
+      set((state) => {
+        const next = [...state.timelineEvents, newEvent];
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       return;
     }
     try {
@@ -472,11 +517,13 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   updateTimelineEvent: async (id, updates) => {
     if (isSandboxMode) {
-      set((state) => ({
-        timelineEvents: state.timelineEvents.map((evt) =>
+      set((state) => {
+        const next = state.timelineEvents.map((evt) =>
           evt.id === id ? { ...evt, ...updates } : evt
-        ),
-      }));
+        );
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       return;
     }
     try {
@@ -517,9 +564,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   deleteTimelineEvent: async (id) => {
     if (isSandboxMode) {
-      set((state) => ({
-        timelineEvents: state.timelineEvents.filter((evt) => evt.id !== id),
-      }));
+      set((state) => {
+        const next = state.timelineEvents.filter((evt) => evt.id !== id);
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       return;
     }
     try {
@@ -540,8 +589,8 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   updateProker: async (id, progress, status, name, pic, deadline, location, description, members) => {
     if (isSandboxMode) {
-      set((state) => ({
-        prokers: state.prokers.map((p) =>
+      set((state) => {
+        const next = state.prokers.map((p) =>
           p.id === id
             ? {
                 ...p,
@@ -555,8 +604,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
                 members: members !== undefined ? members : p.members,
               }
             : p
-        ),
-      }));
+        );
+        saveLocalData("kkn_prokers_store", next);
+        return { prokers: next };
+      });
       return;
     }
     try {
@@ -655,7 +706,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   addProker: async (proker) => {
     if (isSandboxMode) {
       const newProker = { ...proker, id: `proker-${Date.now()}` };
-      set((state) => ({ prokers: [...state.prokers, newProker] }));
+      set((state) => {
+        const nextProkers = [...state.prokers, newProker];
+        saveLocalData("kkn_prokers_store", nextProkers);
+        return { prokers: nextProkers };
+      });
       return;
     }
     try {
@@ -741,9 +796,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   deleteProker: async (id) => {
     if (isSandboxMode) {
-      set((state) => ({
-        prokers: state.prokers.filter((p) => p.id !== id)
-      }));
+      set((state) => {
+        const nextProkers = state.prokers.filter((p) => p.id !== id);
+        saveLocalData("kkn_prokers_store", nextProkers);
+        return { prokers: nextProkers };
+      });
       return;
     }
     try {
@@ -765,11 +822,18 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   addLogbook: async (entry) => {
     if (isSandboxMode) {
       const newLog = { ...entry, id: `log-${Date.now()}`, created_at: new Date().toISOString() };
-      set((state) => ({
-        logbooks: [...state.logbooks, newLog],
-        totalLogbooks: state.totalLogbooks + 1,
-        totalDocs: entry.status === "Selesai" ? state.totalDocs + entry.photos.length : state.totalDocs,
-      }));
+      set((state) => {
+        const nextLogbooks = [...state.logbooks, newLog];
+        saveLocalData("kkn_logbooks_store", nextLogbooks);
+        const finishedPhotos = nextLogbooks
+          .filter((l) => l.status === "Selesai")
+          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        return {
+          logbooks: nextLogbooks,
+          totalLogbooks: nextLogbooks.length,
+          totalDocs: finishedPhotos + state.documents.length,
+        };
+      });
       return;
     }
     try {
@@ -831,18 +895,14 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   updateLogbook: async (id, updates) => {
     if (isSandboxMode) {
       set((state) => {
-        const oldLog = state.logbooks.find((l) => l.id === id);
-        const wasDraft = oldLog?.status === "Draft";
-        const isSelesai = updates.status === "Selesai" || (oldLog?.status === "Selesai" && updates.status !== "Draft");
-        
-        let docDiff = 0;
-        if (wasDraft && isSelesai && updates.photos) {
-          docDiff = updates.photos.length;
-        }
-        
+        const nextLogbooks = state.logbooks.map((l) => (l.id === id ? { ...l, ...updates } : l));
+        saveLocalData("kkn_logbooks_store", nextLogbooks);
+        const finishedPhotos = nextLogbooks
+          .filter((l) => l.status === "Selesai")
+          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
-          logbooks: state.logbooks.map((l) => (l.id === id ? { ...l, ...updates } : l)),
-          totalDocs: state.totalDocs + docDiff,
+          logbooks: nextLogbooks,
+          totalDocs: finishedPhotos + state.documents.length,
         };
       });
       return;
@@ -899,13 +959,15 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   deleteLogbook: async (id) => {
     if (isSandboxMode) {
       set((state) => {
-        const log = state.logbooks.find((l) => l.id === id);
-        const isSelesai = log?.status === "Selesai";
-        const docCount = log?.photos?.length || 0;
+        const nextLogbooks = state.logbooks.filter((l) => l.id !== id);
+        saveLocalData("kkn_logbooks_store", nextLogbooks);
+        const finishedPhotos = nextLogbooks
+          .filter((l) => l.status === "Selesai")
+          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
         return {
-          logbooks: state.logbooks.filter((l) => l.id !== id),
-          totalLogbooks: state.totalLogbooks - 1,
-          totalDocs: isSelesai ? Math.max(0, state.totalDocs - docCount) : state.totalDocs,
+          logbooks: nextLogbooks,
+          totalLogbooks: nextLogbooks.length,
+          totalDocs: finishedPhotos + state.documents.length,
         };
       });
       return;
@@ -941,7 +1003,14 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         id: `doc-${Date.now()}`,
         uploadDate: new Date().toISOString().split("T")[0]
       };
-      set((state) => ({ documents: [...state.documents, newDoc] }));
+      set((state) => {
+        const nextDocs = [...state.documents, newDoc];
+        saveLocalData("kkn_documents_store", nextDocs);
+        const finishedPhotos = state.logbooks
+          .filter((l) => l.status === "Selesai")
+          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        return { documents: nextDocs, totalDocs: finishedPhotos + nextDocs.length };
+      });
       return;
     }
     try {
@@ -976,7 +1045,14 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   deleteDocument: async (id) => {
     if (isSandboxMode) {
-      set((state) => ({ documents: state.documents.filter((d) => d.id !== id) }));
+      set((state) => {
+        const nextDocs = state.documents.filter((d) => d.id !== id);
+        saveLocalData("kkn_documents_store", nextDocs);
+        const finishedPhotos = state.logbooks
+          .filter((l) => l.status === "Selesai")
+          .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+        return { documents: nextDocs, totalDocs: finishedPhotos + nextDocs.length };
+      });
       return;
     }
     try {
@@ -996,9 +1072,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   renameDocument: async (id, newName) => {
     if (isSandboxMode) {
-      set((state) => ({
-        documents: state.documents.map((d) => (d.id === id ? { ...d, name: newName } : d))
-      }));
+      set((state) => {
+        const nextDocs = state.documents.map((d) => (d.id === id ? { ...d, name: newName } : d));
+        saveLocalData("kkn_documents_store", nextDocs);
+        return { documents: nextDocs };
+      });
       return;
     }
     try {
@@ -1021,7 +1099,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
   addNotulen: async (note) => {
     if (isSandboxMode) {
       const newNote = { ...note, id: `note-${Date.now()}` };
-      set((state) => ({ notulen: [...state.notulen, newNote] }));
+      set((state) => {
+        const nextNotes = [...state.notulen, newNote];
+        saveLocalData("kkn_notulen_store", nextNotes);
+        return { notulen: nextNotes };
+      });
       return;
     }
     try {
@@ -1062,9 +1144,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   updateNotulen: async (id, updates) => {
     if (isSandboxMode) {
-      set((state) => ({
-        notulen: state.notulen.map((n) => (n.id === id ? { ...n, ...updates } : n))
-      }));
+      set((state) => {
+        const nextNotes = state.notulen.map((n) => (n.id === id ? { ...n, ...updates } : n));
+        saveLocalData("kkn_notulen_store", nextNotes);
+        return { notulen: nextNotes };
+      });
       return;
     }
     try {
@@ -1110,7 +1194,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   deleteNotulen: async (id) => {
     if (isSandboxMode) {
-      set((state) => ({ notulen: state.notulen.filter((n) => n.id !== id) }));
+      set((state) => {
+        const nextNotes = state.notulen.filter((n) => n.id !== id);
+        saveLocalData("kkn_notulen_store", nextNotes);
+        return { notulen: nextNotes };
+      });
       return;
     }
     try {
