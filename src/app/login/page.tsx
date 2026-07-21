@@ -28,15 +28,18 @@ function LoginFormContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize and check current session
+  // Initialize session once on mount
   useEffect(() => {
-    initializeAuth().then(() => {
-      if (user) {
-        const redirectTo = searchParams.get("redirect") || "/dashboard";
-        router.push(redirectTo);
-      }
-    });
-  }, [user, initializeAuth, router, searchParams]);
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Redirect if session exists
+  useEffect(() => {
+    if (user) {
+      const redirectTo = searchParams.get("redirect") || "/dashboard";
+      router.push(redirectTo);
+    }
+  }, [user, router, searchParams]);
 
   const {
     register,

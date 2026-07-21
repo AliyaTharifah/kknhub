@@ -30,9 +30,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true });
 
     if (isSandboxMode) {
-      // Mock login for Sandbox Mode
-      await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate delay
-
       const role = email.toLowerCase().includes("sekretaris") ? "Sekretaris" : "Anggota";
       const mockProfile: UserProfile = {
         id: role === "Sekretaris" ? "mock-uuid-sekretaris" : "mock-uuid-anggota",
@@ -46,11 +43,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         created_at: new Date().toISOString(),
       };
 
-      localStorage.setItem("kkn_session_mock", JSON.stringify(mockProfile));
       if (typeof window !== "undefined") {
+        localStorage.setItem("kkn_session_mock", JSON.stringify(mockProfile));
         document.cookie = "kkn_sandbox_logged_in=true; path=/; max-age=86400; SameSite=Lax";
       }
-      set({ user: mockProfile, isLoading: false });
+      set({ user: mockProfile, isLoading: false, initialized: true });
       return { success: true };
     }
 
@@ -63,7 +60,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (authError) throw authError;
       if (!authData.user) throw new Error("No user object returned.");
 
-      // Fetch profile details from public.users table
       const { data: profile, error: profileError } = await supabase
         .from("users")
         .select("*")
@@ -76,7 +72,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
       }
 
-      set({ user: profile as UserProfile, isLoading: false });
+      set({ user: profile as UserProfile, isLoading: false, initialized: true });
       return { success: true };
     } catch (err) {
       const error = err as Error;
@@ -88,15 +84,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   logout: async () => {
     set({ isLoading: true });
     if (isSandboxMode) {
-      localStorage.removeItem("kkn_session_mock");
       if (typeof window !== "undefined") {
+        localStorage.removeItem("kkn_session_mock");
         document.cookie = "kkn_sandbox_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
       }
       set({ user: null, isLoading: false });
       return;
     }
 
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+
     if (typeof window !== "undefined") {
       document.cookie = "sb-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
     }
@@ -111,7 +110,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
     if (isSandboxMode) {
       const updatedUser = { ...currentUser, ...updates };
-      localStorage.setItem("kkn_session_mock", JSON.stringify(updatedUser));
+      if (typeof window !== "undefined") {
+        localStorage.setItem("kkn_session_mock", JSON.stringify(updatedUser));
+      }
       set({ user: updatedUser, isLoading: false });
       return { success: true };
     }
@@ -137,17 +138,29 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     if (get().initialized) return;
 
     if (isSandboxMode) {
-      const savedMock = localStorage.getItem("kkn_session_mock");
-      if (savedMock) {
-        set({ user: JSON.parse(savedMock), isLoading: false, initialized: true });
-      } else {
-        set({ user: null, isLoading: false, initialized: true });
+      if (typeof window !== "undefined") {
+        const savedMock = localStorage.getItem("kkn_session_mock");
+        if (savedMock) {
+          try {
+            const userObj = JSON.parse(savedMock);
+            document.cookie = "kkn_sandbox_logged_in=true; path=/; max-age=86400; SameSite=Lax";
+            set({ user: userObj, isLoading: false, initialized: true });
+            return;
+          } catch {}
+        }
       }
+      set({ user: null, isLoading: false, initialized: true });
       return;
     }
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      // 3-second timeout protection for getSession to prevent hanging on slow network/unreachable Supabase
+      const sessionPromise = supabase.auth.getSession();
+      const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
+        setTimeout(() => resolve({ data: { session: null } }), 3000)
+      );
+
+      const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
 
       if (session?.user) {
         const { data: profile, error } = await supabase
@@ -162,7 +175,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
           }
         } else {
-          // If profile fetch fails, fallback to metadata or logout
           if (typeof window !== "undefined") {
             document.cookie = "sb-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
           }

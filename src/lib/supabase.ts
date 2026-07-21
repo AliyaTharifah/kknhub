@@ -22,7 +22,8 @@ const key = isSandboxMode ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.sandbox-placeh
 
 export const supabase = createClient(url, key, {
   auth: {
-    persistSession: true,
-    autoRefreshToken: true,
+    persistSession: !isSandboxMode,
+    autoRefreshToken: !isSandboxMode,
+    detectSessionInUrl: !isSandboxMode,
   },
 });
