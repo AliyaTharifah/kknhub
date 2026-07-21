@@ -101,18 +101,25 @@ export default function LaporanPage() {
 
   const activityStats = useMemo(() => {
     let docsCount = 0;
-    logbooks.forEach((log) => {
-      if (log.status === "Selesai") {
-        docsCount += log.photos?.length || 0;
-      }
+    const targetLogs = (!isSecretary && user)
+      ? logbooks.filter((l) => l.user_id === user.id)
+      : logbooks;
+
+    targetLogs.forEach((log) => {
+      docsCount += log.photos?.length || 0;
     });
+
+    const targetMeetings = (!isSecretary && user)
+      ? notulen.filter((n) => n.attendees.includes(user.full_name))
+      : notulen;
+
     return {
-      logbooks: logbooks.length,
+      logbooks: targetLogs.length,
       docs: docsCount,
-      meetings: notulen.length,
+      meetings: targetMeetings.length > 0 ? targetMeetings.length : notulen.length,
       timelines: timelineEvents.length,
     };
-  }, [logbooks, notulen, timelineEvents]);
+  }, [logbooks, notulen, timelineEvents, isSecretary, user]);
 
   // 2. Member Rankings calculation based strictly on usersList (excluding fake user names like Aminah)
   const memberRankings = useMemo<MemberRank[]>(() => {

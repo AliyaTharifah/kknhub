@@ -138,11 +138,39 @@ export default function DashboardPage() {
     ];
   }, [logbooks]);
 
+  const userLogbooksCount = useMemo(() => {
+    if (!user) return 0;
+    const individualCount = logbooks.filter((l) => l.user_id === user.id).length;
+    if (user.role === "Sekretaris") {
+      return individualCount > 0 ? individualCount : logbooks.length;
+    }
+    return individualCount;
+  }, [logbooks, user]);
+
+  const userDocsCount = useMemo(() => {
+    if (!user) return 0;
+    const individualPhotos = logbooks
+      .filter((l) => l.user_id === user.id)
+      .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+    
+    const userUploadedDocs = (useLandingStore.getState().documents || []).filter(
+      (d) => d.uploadedBy === user.full_name || d.uploadedBy === user.id
+    ).length;
+
+    const userTotal = individualPhotos + userUploadedDocs;
+    if (user.role === "Sekretaris") {
+      const groupPhotos = logbooks.reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+      const groupDocsCount = useLandingStore.getState().documents.length;
+      return userTotal > 0 ? userTotal : (groupPhotos + groupDocsCount);
+    }
+    return userTotal;
+  }, [logbooks, user]);
+
   const stats = [
     { label: "Total Anggota", value: totalMembers, icon: Users, color: "text-blue-500 bg-blue-50 dark:bg-blue-900/10" },
     { label: "Program Kerja", value: prokers.length, icon: Briefcase, color: "text-purple-500 bg-purple-50 dark:bg-purple-900/10" },
-    { label: "Total Logbook", value: totalLogbooks, icon: FileText, color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/10" },
-    { label: "Dokumentasi", value: totalDocs, icon: Camera, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/10" },
+    { label: "Total Logbook", value: userLogbooksCount, icon: FileText, color: "text-emerald-500 bg-emerald-50 dark:bg-emerald-900/10" },
+    { label: "Dokumentasi", value: userDocsCount, icon: Camera, color: "text-orange-500 bg-orange-50 dark:bg-orange-900/10" },
     { label: "Notulen Rapat", value: totalNotulen, icon: ScrollText, color: "text-amber-500 bg-amber-50 dark:bg-amber-900/10" },
     { label: "Progress Proker", value: `${averageProgress}%`, icon: Percent, color: "text-rose-500 bg-rose-50 dark:bg-rose-900/10" },
   ];

@@ -266,9 +266,12 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       const documents = loadLocalData<DocumentItem[]>("kkn_documents_store", []);
       const notulen = loadLocalData<NotulenItem[]>("kkn_notulen_store", []);
 
-      const finishedLogbookPhotos = logbooks
-        .filter((l) => l.status === "Selesai")
+      const allLogbookPhotos = logbooks
         .reduce((sum, l) => sum + (l.photos?.length || 0), 0);
+
+      const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
+      const uniqueLogbookUsers = new Set(logbooks.map(l => l.user_id));
+      const calculatedMembers = new Set([...registeredUsers, ...Array.from(uniqueLogbookUsers)]).size;
 
       set({
         prokers,
@@ -276,9 +279,9 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         logbooks,
         documents,
         notulen,
-        totalMembers: 15,
+        totalMembers: calculatedMembers > 0 ? calculatedMembers : 1,
         totalLogbooks: logbooks.length,
-        totalDocs: finishedLogbookPhotos + documents.length,
+        totalDocs: allLogbookPhotos + documents.length,
       });
       return;
     }
@@ -436,19 +439,12 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         totalDocs: totalDocsCount
       });
 
-      // If the currently logged-in user is a Sekretaris, trigger auto group linkage to simplify sandbox permissions
-      const { data: userSession } = await supabase.auth.getSession();
-      const currentUserId = userSession?.session?.user?.id;
-      if (currentUserId) {
-        const { data: userRecord } = await supabase
-          .from("users")
-          .select("role")
-          .eq("id", currentUserId)
-          .single();
-        if (userRecord?.role === "Sekretaris") {
-          const groupId = await getOrCreateGroupId();
-          await linkAllUsersToGroup(groupId);
-        }
+      // Ensure auto group linkage so all members can view group prokers and timelines
+      try {
+        const groupId = await getOrCreateGroupId();
+        await linkAllUsersToGroup(groupId);
+      } catch (e) {
+        console.warn("Auto group link skipped:", e);
       }
 
     } catch (e) {

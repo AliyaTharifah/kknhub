@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
 import Countdown from "@/components/landing/Countdown";
@@ -9,8 +10,16 @@ import TimelinePreview from "@/components/landing/TimelinePreview";
 import ProkerPreview from "@/components/landing/ProkerPreview";
 import GalleryPreview from "@/components/landing/GalleryPreview";
 import Footer from "@/components/Footer";
+import { useLandingStore } from "@/hooks/useLandingStore";
 
 export default function Home() {
+  const fetchLandingData = useLandingStore((state) => state.fetchLandingData);
+  const initializeStats = useLandingStore((state) => state.initializeStats);
+
+  useEffect(() => {
+    fetchLandingData();
+    initializeStats();
+  }, [fetchLandingData, initializeStats]);
   return (
     <div className="relative min-h-screen flex flex-col overflow-x-hidden">
       {/* Navigation */}

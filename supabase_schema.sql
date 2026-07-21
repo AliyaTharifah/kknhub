@@ -219,9 +219,9 @@ CREATE POLICY "Sekretaris can manage mapping" ON public.group_members
 
 
 -- 4. PROGRAMS (Proker) POLICIES
-CREATE POLICY "Members can select all prokers" ON public.programs
+CREATE POLICY "Authenticated users can select all prokers" ON public.programs
     FOR SELECT TO authenticated
-    USING (public.is_group_member(programs.group_id, auth.uid()));
+    USING (TRUE);
 
 CREATE POLICY "Sekretaris can fully manage programs" ON public.programs
     FOR ALL TO authenticated
@@ -229,15 +229,9 @@ CREATE POLICY "Sekretaris can fully manage programs" ON public.programs
 
 
 -- 5. TIMELINES POLICIES
-CREATE POLICY "Members can view timelines of their programs" ON public.timelines
+CREATE POLICY "Authenticated users can select all timelines" ON public.timelines
     FOR SELECT TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.programs p
-            WHERE p.id = timelines.program_id
-            AND public.is_group_member(p.group_id, auth.uid())
-        )
-    );
+    USING (TRUE);
 
 CREATE POLICY "Sekretaris can manage timelines" ON public.timelines
     FOR ALL TO authenticated
