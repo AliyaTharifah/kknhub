@@ -30,7 +30,15 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ isLoading: true });
 
     if (isSandboxMode) {
-      const role = email.toLowerCase().includes("sekretaris") ? "Sekretaris" : "Anggota";
+      const emailLower = email.toLowerCase();
+      const isSekretaris =
+        emailLower.includes("sekretaris") ||
+        emailLower.includes("admin") ||
+        emailLower.includes("kordes") ||
+        emailLower.includes("ketua");
+
+      const role: "Sekretaris" | "Anggota" = isSekretaris ? "Sekretaris" : "Anggota";
+
       const mockProfile: UserProfile = {
         id: role === "Sekretaris" ? "mock-uuid-sekretaris" : "mock-uuid-anggota",
         email,
@@ -46,6 +54,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       if (typeof window !== "undefined") {
         localStorage.setItem("kkn_session_mock", JSON.stringify(mockProfile));
         document.cookie = "kkn_sandbox_logged_in=true; path=/; max-age=86400; SameSite=Lax";
+        try {
+          const registered = JSON.parse(localStorage.getItem("kkn_users_registered") || "[]");
+          if (!registered.includes(mockProfile.id)) {
+            registered.push(mockProfile.id);
+            localStorage.setItem("kkn_users_registered", JSON.stringify(registered));
+          }
+        } catch {}
       }
       set({ user: mockProfile, isLoading: false, initialized: true });
       return { success: true };
@@ -58,7 +73,9 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       });
 
       if (authError) throw authError;
-      if (!authData.user) throw new Error("No user object returned.");
+      if (!authData.user) throw new Error("Tidak dapat memperoleh data pengguna.");
+
+      let userProfile: UserProfile;
 
       const { data: profile, error: profileError } = await supabase
         .from("users")
@@ -66,13 +83,40 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         .eq("id", authData.user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (!profileError && profile) {
+        userProfile = profile as UserProfile;
+      } else {
+        const metadata = authData.user.user_metadata || {};
+        const emailLower = (authData.user.email || "").toLowerCase();
+        const isSekretaris =
+          metadata.role === "Sekretaris" ||
+          emailLower.includes("sekretaris") ||
+          emailLower.includes("admin") ||
+          emailLower.includes("kordes") ||
+          emailLower.includes("ketua");
+
+        const role: "Sekretaris" | "Anggota" = isSekretaris ? "Sekretaris" : "Anggota";
+
+        userProfile = {
+          id: authData.user.id,
+          email: authData.user.email || email,
+          full_name: metadata.full_name || (role === "Sekretaris" ? "Aliya Salsabila (Sekretaris)" : "Anggota KKN"),
+          role,
+          phone: metadata.phone || "",
+          photo_url: metadata.photo_url || (role === "Sekretaris" ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" : undefined),
+          created_at: new Date().toISOString(),
+        };
+
+        try {
+          await supabase.from("users").upsert(userProfile);
+        } catch {}
+      }
 
       if (typeof window !== "undefined") {
         document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
       }
 
-      set({ user: profile as UserProfile, isLoading: false, initialized: true });
+      set({ user: userProfile, isLoading: false, initialized: true });
       return { success: true };
     } catch (err) {
       const error = err as Error;
@@ -154,7 +198,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     }
 
     try {
-      // 3-second timeout protection for getSession to prevent hanging on slow network/unreachable Supabase
       const sessionPromise = supabase.auth.getSession();
       const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
         setTimeout(() => resolve({ data: { session: null } }), 3000)
@@ -163,6 +206,8 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
 
       if (session?.user) {
+        let userProfile: UserProfile;
+
         const { data: profile, error } = await supabase
           .from("users")
           .select("*")
@@ -170,15 +215,37 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           .single();
 
         if (!error && profile) {
-          set({ user: profile as UserProfile });
-          if (typeof window !== "undefined") {
-            document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
-          }
+          userProfile = profile as UserProfile;
         } else {
-          if (typeof window !== "undefined") {
-            document.cookie = "sb-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
-          }
-          set({ user: null });
+          const metadata = session.user.user_metadata || {};
+          const emailLower = (session.user.email || "").toLowerCase();
+          const isSekretaris =
+            metadata.role === "Sekretaris" ||
+            emailLower.includes("sekretaris") ||
+            emailLower.includes("admin") ||
+            emailLower.includes("kordes") ||
+            emailLower.includes("ketua");
+
+          const role: "Sekretaris" | "Anggota" = isSekretaris ? "Sekretaris" : "Anggota";
+
+          userProfile = {
+            id: session.user.id,
+            email: session.user.email || "",
+            full_name: metadata.full_name || (role === "Sekretaris" ? "Aliya Salsabila (Sekretaris)" : "Anggota KKN"),
+            role,
+            phone: metadata.phone || "",
+            photo_url: metadata.photo_url || (role === "Sekretaris" ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" : undefined),
+            created_at: new Date().toISOString(),
+          };
+
+          try {
+            await supabase.from("users").upsert(userProfile);
+          } catch {}
+        }
+
+        set({ user: userProfile });
+        if (typeof window !== "undefined") {
+          document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
         }
       } else {
         set({ user: null });

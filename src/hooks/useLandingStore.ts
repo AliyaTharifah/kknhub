@@ -1218,7 +1218,10 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
 
   initializeStats: async () => {
     if (isSandboxMode) {
-      set({ totalMembers: 15 });
+      const registeredUsers = loadLocalData<string[]>("kkn_users_registered", []);
+      const uniqueLogbookUsers = new Set(get().logbooks.map(l => l.user_id));
+      const totalCount = new Set([...registeredUsers, ...Array.from(uniqueLogbookUsers)]).size;
+      set({ totalMembers: totalCount });
       return;
     }
     try {
