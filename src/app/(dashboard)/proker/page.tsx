@@ -42,6 +42,7 @@ export default function ProkerPage() {
   const isSecretary = user?.role === "Sekretaris";
 
   const [selectedProker, setSelectedProker] = useState<Proker | null>(null);
+  const [detailProker, setDetailProker] = useState<Proker | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Add Proker states
@@ -233,7 +234,10 @@ export default function ProkerPage() {
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
                 className="relative"
               >
-                <Card className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col justify-between">
+                <Card 
+                  onClick={() => setDetailProker(proker)}
+                  className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 h-full flex flex-col justify-between cursor-pointer"
+                >
                   {/* Status indicator line */}
                   <div className={`h-1 w-full ${statusInfo.barColor}`} />
 
@@ -249,7 +253,7 @@ export default function ProkerPage() {
                         </span>
 
                         {isSecretary && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => openUpdateDialog(proker)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -294,7 +298,7 @@ export default function ProkerPage() {
                           </div>
                         )}
                         {proker.description && (
-                          <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed pt-1.5 border-t border-slate-100/50 dark:border-slate-850/50">
+                          <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed pt-1.5 border-t border-slate-100/50 dark:border-slate-850/50 line-clamp-2">
                             {proker.description}
                           </p>
                         )}
@@ -308,6 +312,11 @@ export default function ProkerPage() {
                         <span className="text-slate-700 dark:text-slate-200">{proker.progress}%</span>
                       </div>
                       <Progress value={proker.progress} className="h-2" />
+                      <div className="pt-1 text-right">
+                        <span className="text-[11px] font-bold text-kkn-purple hover:underline">
+                          Lihat Detail Proker &rarr;
+                        </span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -509,7 +518,7 @@ export default function ProkerPage() {
               <label className="text-xs font-bold text-slate-655 dark:text-slate-350">Lokasi Pelaksanaan</label>
               <input
                 type="text"
-                placeholder="Contoh: Balai RW 02"
+                placeholder="Contoh: Posyandu Mawar RW 03"
                 value={addLocation}
                 onChange={(e) => setAddLocation(e.target.value)}
                 className="w-full text-sm text-slate-808 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
@@ -521,19 +530,19 @@ export default function ProkerPage() {
               <label className="text-xs font-bold text-slate-655 dark:text-slate-350">Anggota yang Terlibat</label>
               <input
                 type="text"
-                placeholder="Contoh: Rian, Hadi, Dina"
+                placeholder="Contoh: Aminah, Fathur, Rizky"
                 value={addMembers}
                 onChange={(e) => setAddMembers(e.target.value)}
                 className="w-full text-sm text-slate-808 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
               />
             </div>
 
-            {/* Deskripsi */}
+            {/* Deskripsi Proker */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-655 dark:text-slate-350">Deskripsi Program Kerja</label>
               <textarea
                 rows={3}
-                placeholder="Jelaskan mengenai tujuan program kerja ini..."
+                placeholder="Rincian tujuan dan metode pelaksanaan..."
                 value={addDescription}
                 onChange={(e) => setAddDescription(e.target.value)}
                 className="w-full text-sm text-slate-808 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none resize-none"
@@ -588,6 +597,103 @@ export default function ProkerPage() {
               Ya, Hapus
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Read-Only Detail Modal for Proker */}
+      <Dialog open={!!detailProker} onOpenChange={(open) => !open && setDetailProker(null)}>
+        <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              {detailProker && (() => {
+                const info = getStatusInfo(detailProker.status);
+                const Icon = info.icon;
+                return (
+                  <span className={`inline-flex items-center gap-1.5 text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${info.class}`}>
+                    <Icon className="h-3.5 w-3.5" />
+                    {info.label}
+                  </span>
+                );
+              })()}
+            </div>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+              {detailProker?.name}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Detail target & progress pencapaian program kerja posko KKN Desa Sukaluyu.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailProker && (
+            <div className="space-y-5 py-3">
+              {/* Progress Gauge */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-855 border border-slate-100 dark:border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-200">
+                  <span>Realisasi Target Program Kerja</span>
+                  <span className="text-kkn-blue font-extrabold text-sm">{detailProker.progress}%</span>
+                </div>
+                <Progress value={detailProker.progress} className="h-2.5" />
+              </div>
+
+              {/* Grid Metadata */}
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-855 border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PIC Penanggung Jawab</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    <User className="h-4 w-4 text-kkn-blue" />
+                    <span>{detailProker.pic}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Deadline Tanggal</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    <Calendar className="h-4 w-4 text-kkn-purple" />
+                    <span>{detailProker.deadline}</span>
+                  </div>
+                </div>
+
+                {detailProker.location && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lokasi Pelaksanaan</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                      <MapPin className="h-4 w-4 text-emerald-500" />
+                      <span>{detailProker.location}</span>
+                    </div>
+                  </div>
+                )}
+
+                {detailProker.members && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Anggota Terlibat</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                      <Users className="h-4 w-4 text-amber-500" />
+                      <span>{detailProker.members}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {detailProker.description && (
+                <div className="space-y-1.5">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Deskripsi Program Kerja</span>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50/50 dark:bg-slate-850/50 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 whitespace-pre-wrap">
+                    {detailProker.description}
+                  </p>
+                </div>
+              )}
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setDetailProker(null)}
+                  className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl cursor-pointer"
+                >
+                  Tutup Detail
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

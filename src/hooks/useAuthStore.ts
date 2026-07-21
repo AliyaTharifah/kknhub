@@ -113,6 +113,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
 
       if (typeof window !== "undefined") {
+        localStorage.setItem("kkn_session_mock", JSON.stringify(userProfile));
         document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
       }
 
@@ -121,29 +122,25 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     } catch (err) {
       const error = err as Error;
       set({ isLoading: false });
-      return { success: false, error: error.message || "Email atau password salah." };
+      return { success: false, error: error.message || "Gagal masuk. Periksa email & kata sandi Anda." };
     }
   },
 
   logout: async () => {
     set({ isLoading: true });
-    if (isSandboxMode) {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("kkn_session_mock");
-        document.cookie = "kkn_sandbox_logged_in=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+    if (!isSandboxMode) {
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {
+        console.warn("Supabase signout warning:", e);
       }
-      set({ user: null, isLoading: false });
-      return;
     }
-
-    try {
-      await supabase.auth.signOut();
-    } catch {}
-
     if (typeof window !== "undefined") {
-      document.cookie = "sb-authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+      localStorage.removeItem("kkn_session_mock");
+      document.cookie = "sb-authenticated=; path=/; max-age=0";
+      document.cookie = "kkn_sandbox_logged_in=; path=/; max-age=0";
     }
-    set({ user: null, isLoading: false });
+    set({ user: null, isLoading: false, initialized: false });
   },
 
   updateProfile: async (updates) => {
@@ -169,7 +166,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       if (error) throw error;
 
-      set({ user: { ...currentUser, ...updates }, isLoading: false });
+      const updatedUser = { ...currentUser, ...updates };
+      if (typeof window !== "undefined") {
+        localStorage.setItem("kkn_session_mock", JSON.stringify(updatedUser));
+      }
+      set({ user: updatedUser, isLoading: false });
       return { success: true };
     } catch (err) {
       const error = err as Error;
@@ -179,81 +180,76 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   },
 
   initializeAuth: async () => {
-    if (get().initialized) return;
+    if (get().initialized && get().user) return;
 
-    if (isSandboxMode) {
-      if (typeof window !== "undefined") {
-        const savedMock = localStorage.getItem("kkn_session_mock");
-        if (savedMock) {
-          try {
-            const userObj = JSON.parse(savedMock);
+    if (!isSandboxMode) {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          let userProfile: UserProfile;
+
+          const { data: profile, error } = await supabase
+            .from("users")
+            .select("*")
+            .eq("id", session.user.id)
+            .single();
+
+          if (!error && profile) {
+            userProfile = profile as UserProfile;
+          } else {
+            const metadata = session.user.user_metadata || {};
+            const emailLower = (session.user.email || "").toLowerCase();
+            const isSekretaris =
+              metadata.role === "Sekretaris" ||
+              emailLower.includes("sekretaris") ||
+              emailLower.includes("admin") ||
+              emailLower.includes("kordes") ||
+              emailLower.includes("ketua");
+
+            const role: "Sekretaris" | "Anggota" = isSekretaris ? "Sekretaris" : "Anggota";
+
+            userProfile = {
+              id: session.user.id,
+              email: session.user.email || "",
+              full_name: metadata.full_name || (role === "Sekretaris" ? "Aliya Salsabila (Sekretaris)" : "Anggota KKN"),
+              role,
+              phone: metadata.phone || "",
+              photo_url: metadata.photo_url || (role === "Sekretaris" ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" : undefined),
+              created_at: new Date().toISOString(),
+            };
+
+            try {
+              await supabase.from("users").upsert(userProfile);
+            } catch {}
+          }
+
+          set({ user: userProfile, isLoading: false, initialized: true });
+          if (typeof window !== "undefined") {
+            localStorage.setItem("kkn_session_mock", JSON.stringify(userProfile));
+            document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
+          }
+          return;
+        }
+      } catch (e) {
+        console.warn("Supabase session check error:", e);
+      }
+    }
+
+    if (typeof window !== "undefined") {
+      const savedMock = localStorage.getItem("kkn_session_mock");
+      if (savedMock) {
+        try {
+          const userObj = JSON.parse(savedMock);
+          if (userObj && userObj.id) {
             document.cookie = "kkn_sandbox_logged_in=true; path=/; max-age=86400; SameSite=Lax";
+            document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
             set({ user: userObj, isLoading: false, initialized: true });
             return;
-          } catch {}
-        }
+          }
+        } catch {}
       }
-      set({ user: null, isLoading: false, initialized: true });
-      return;
     }
 
-    try {
-      const sessionPromise = supabase.auth.getSession();
-      const timeoutPromise = new Promise<{ data: { session: null } }>((resolve) =>
-        setTimeout(() => resolve({ data: { session: null } }), 3000)
-      );
-
-      const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]);
-
-      if (session?.user) {
-        let userProfile: UserProfile;
-
-        const { data: profile, error } = await supabase
-          .from("users")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-
-        if (!error && profile) {
-          userProfile = profile as UserProfile;
-        } else {
-          const metadata = session.user.user_metadata || {};
-          const emailLower = (session.user.email || "").toLowerCase();
-          const isSekretaris =
-            metadata.role === "Sekretaris" ||
-            emailLower.includes("sekretaris") ||
-            emailLower.includes("admin") ||
-            emailLower.includes("kordes") ||
-            emailLower.includes("ketua");
-
-          const role: "Sekretaris" | "Anggota" = isSekretaris ? "Sekretaris" : "Anggota";
-
-          userProfile = {
-            id: session.user.id,
-            email: session.user.email || "",
-            full_name: metadata.full_name || (role === "Sekretaris" ? "Aliya Salsabila (Sekretaris)" : "Anggota KKN"),
-            role,
-            phone: metadata.phone || "",
-            photo_url: metadata.photo_url || (role === "Sekretaris" ? "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" : undefined),
-            created_at: new Date().toISOString(),
-          };
-
-          try {
-            await supabase.from("users").upsert(userProfile);
-          } catch {}
-        }
-
-        set({ user: userProfile });
-        if (typeof window !== "undefined") {
-          document.cookie = "sb-authenticated=true; path=/; max-age=86400; SameSite=Lax";
-        }
-      } else {
-        set({ user: null });
-      }
-    } catch {
-      set({ user: null });
-    } finally {
-      set({ isLoading: false, initialized: true });
-    }
+    set({ user: null, isLoading: false, initialized: true });
   },
 }));

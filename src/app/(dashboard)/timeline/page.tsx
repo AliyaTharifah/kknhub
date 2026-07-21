@@ -56,6 +56,7 @@ export default function TimelinePage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<TimelineEvent | null>(null);
+  const [detailEvent, setDetailEvent] = useState<TimelineEvent | null>(null);
 
   const {
     register,
@@ -200,13 +201,14 @@ export default function TimelinePage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="relative"
               >
-                {/* Timeline dot */}
                 <div className="absolute -left-[31px] md:-left-[39px] h-5 w-5 rounded-full border-4 border-white dark:border-slate-955 bg-kkn-blue flex items-center justify-center shadow-sm" />
 
-                <Card className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300">
+                <Card 
+                  onClick={() => setDetailEvent(event)}
+                  className="overflow-hidden bg-white dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+                >
                   <CardContent className="p-5 md:p-6 space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                      {/* Left Info Badges */}
                       <div className="flex flex-wrap items-center gap-2.5">
                         <span
                           className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${getCategoryColor(
@@ -228,9 +230,8 @@ export default function TimelinePage() {
                         </span>
                       </div>
 
-                      {/* Right Admin buttons */}
                       {isSecretary && (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <button
                             onClick={() => openEditDialog(event)}
                             className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -250,30 +251,32 @@ export default function TimelinePage() {
                       )}
                     </div>
 
-                    {/* Title */}
                     <h3 className="text-base md:text-lg font-black text-slate-800 dark:text-white">
                       {event.title}
                     </h3>
 
-                    {/* Description */}
-                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-3xl">
+                    <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 leading-relaxed max-w-3xl line-clamp-2">
                       {event.description}
                     </p>
 
-                    {/* Info rows (PIC & Location) */}
-                    <div className="flex flex-wrap gap-4 pt-4 border-t border-slate-100 dark:border-slate-850 text-slate-500 dark:text-slate-400">
-                      {event.pic && (
-                        <div className="flex items-center gap-1.5 text-xs font-semibold">
-                          <User className="h-4 w-4 text-slate-400" />
-                          <span>PIC: {event.pic}</span>
-                        </div>
-                      )}
-                      {event.location && (
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <MapPin className="h-4 w-4 text-slate-400" />
-                          <span>Lokasi: {event.location}</span>
-                        </div>
-                      )}
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100 dark:border-slate-850 text-slate-500 dark:text-slate-400">
+                      <div className="flex flex-wrap items-center gap-4">
+                        {event.pic && (
+                          <div className="flex items-center gap-1.5 text-xs font-semibold">
+                            <User className="h-4 w-4 text-slate-400" />
+                            <span>PIC: {event.pic}</span>
+                          </div>
+                        )}
+                        {event.location && (
+                          <div className="flex items-center gap-1.5 text-xs">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            <span>Lokasi: {event.location}</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-[11px] font-bold text-kkn-blue hover:underline">
+                        Lihat Detail &rarr;
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -283,7 +286,6 @@ export default function TimelinePage() {
         )}
       </div>
 
-      {/* Form Modal Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
           <DialogHeader>
@@ -296,12 +298,11 @@ export default function TimelinePage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
-            {/* Title */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Kegiatan</label>
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Nama Agenda Kegiatan</label>
               <input
                 type="text"
-                placeholder="Contoh: Rapat Koordinasi Posyandu"
+                placeholder="Contoh: Rapat Koordinasi Posko 211"
                 {...register("title")}
                 className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
               />
@@ -310,37 +311,33 @@ export default function TimelinePage() {
               )}
             </div>
 
-            {/* Date and Category */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal</label>
-                <input
-                  type="date"
-                  {...register("date")}
-                  className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
-                />
-                {errors.date && (
-                  <span className="text-[10px] text-red-400 font-bold block">{errors.date.message}</span>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Kategori</label>
-                <select
-                  {...register("category")}
-                  className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
-                >
-                  <option value="Umum">Umum</option>
-                  <option value="Program Kerja">Program Kerja</option>
-                  <option value="Kesehatan">Kesehatan</option>
-                  <option value="Pendidikan">Pendidikan</option>
-                  <option value="Lingkungan">Lingkungan</option>
-                </select>
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Kategori Kegiatan</label>
+              <select
+                {...register("category")}
+                className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
+              >
+                <option value="Umum">Umum</option>
+                <option value="Program Kerja">Program Kerja</option>
+                <option value="Kesehatan">Kesehatan</option>
+                <option value="Pendidikan">Pendidikan</option>
+                <option value="Lingkungan">Lingkungan</option>
+              </select>
             </div>
 
-            {/* Start and End Times */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Tanggal Kegiatan</label>
+              <input
+                type="date"
+                {...register("date")}
+                className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
+              />
+              {errors.date && (
+                <span className="text-[10px] text-red-400 font-bold block">{errors.date.message}</span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Mulai</label>
                 <input
@@ -352,7 +349,6 @@ export default function TimelinePage() {
                   <span className="text-[10px] text-red-400 font-bold block">{errors.start_time.message}</span>
                 )}
               </div>
-
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Jam Selesai</label>
                 <input
@@ -366,36 +362,32 @@ export default function TimelinePage() {
               </div>
             </div>
 
-            {/* PIC & Location */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Penanggung Jawab (PIC)</label>
-                <input
-                  type="text"
-                  placeholder="Nama Penanggung Jawab"
-                  {...register("pic")}
-                  className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
-                />
-                {errors.pic && (
-                  <span className="text-[10px] text-red-400 font-bold block">{errors.pic.message}</span>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Lokasi Pos</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Balai RW 02"
-                  {...register("location")}
-                  className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
-                />
-                {errors.location && (
-                  <span className="text-[10px] text-red-400 font-bold block">{errors.location.message}</span>
-                )}
-              </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Lokasi Pelaksanaan</label>
+              <input
+                type="text"
+                placeholder="Contoh: Balai Desa Sukaluyu"
+                {...register("location")}
+                className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
+              />
+              {errors.location && (
+                <span className="text-[10px] text-red-400 font-bold block">{errors.location.message}</span>
+              )}
             </div>
 
-            {/* Associated Program Kerja */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 dark:text-slate-300">PIC Penanggung Jawab</label>
+              <input
+                type="text"
+                placeholder="Contoh: Ahmad Rizky"
+                {...register("pic")}
+                className="w-full text-sm text-slate-800 dark:text-white bg-slate-50 dark:bg-slate-850 border border-slate-200 focus:border-kkn-blue rounded-xl py-2 px-3 outline-none"
+              />
+              {errors.pic && (
+                <span className="text-[10px] text-red-400 font-bold block">{errors.pic.message}</span>
+              )}
+            </div>
+
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Hubungkan Program Kerja</label>
               <select
@@ -413,7 +405,6 @@ export default function TimelinePage() {
               )}
             </div>
 
-            {/* Description */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-slate-600 dark:text-slate-300">Deskripsi Kegiatan</label>
               <textarea
@@ -444,6 +435,88 @@ export default function TimelinePage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!detailEvent} onOpenChange={(open) => !open && setDetailEvent(null)}>
+        <DialogContent className="max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className={`inline-flex items-center gap-1 text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                  detailEvent ? getCategoryColor(detailEvent.category) : ""
+                }`}
+              >
+                <Tag className="h-3 w-3" />
+                {detailEvent?.category}
+              </span>
+            </div>
+            <DialogTitle className="text-xl font-black text-slate-900 dark:text-white leading-tight">
+              {detailEvent?.title}
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-400">
+              Rincian agenda kegiatan kelompok KKN 211 Desa Sukaluyu.
+            </DialogDescription>
+          </DialogHeader>
+
+          {detailEvent && (
+            <div className="space-y-4 py-3">
+              <div className="grid grid-cols-2 gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-855 border border-slate-100 dark:border-slate-800">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tanggal</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    <CalendarIcon className="h-4 w-4 text-kkn-blue" />
+                    <span>{detailEvent.date}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Waktu</span>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                    <Clock className="h-4 w-4 text-kkn-purple" />
+                    <span>{detailEvent.time}</span>
+                  </div>
+                </div>
+
+                {detailEvent.location && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lokasi</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                      <MapPin className="h-4 w-4 text-emerald-500" />
+                      <span>{detailEvent.location}</span>
+                    </div>
+                  </div>
+                )}
+
+                {detailEvent.pic && (
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">PIC Penanggung Jawab</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-white">
+                      <User className="h-4 w-4 text-amber-500" />
+                      <span>{detailEvent.pic}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Deskripsi Lengkap</span>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50/50 dark:bg-slate-850/50 p-3.5 rounded-2xl border border-slate-100 dark:border-slate-800 whitespace-pre-wrap">
+                  {detailEvent.description}
+                </p>
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setDetailEvent(null)}
+                  className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl cursor-pointer"
+                >
+                  Tutup Detail
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

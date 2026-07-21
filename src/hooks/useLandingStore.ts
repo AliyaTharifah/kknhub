@@ -507,7 +507,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
       ...registeredUsers,
       ...mergedLogbooks.map((l) => l.user_id).filter(Boolean)
     ]);
-    const totalMemberCount = uniqueMembers.size > 0 ? uniqueMembers.size : 1;
+    const totalMemberCount = Math.max(uniqueMembers.size, 15);
 
     // Calculate total photos count from all merged logbooks
     const totalPhotos = mergedLogbooks.reduce((s, l) => s + (l.photos?.length || 0), 0);
@@ -579,7 +579,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         pic: event.pic || get().prokers.find(p => p.id === progId)?.pic || "",
         program_id: progId || undefined
       };
-      set((state) => ({ timelineEvents: [...state.timelineEvents, newEvent] }));
+      set((state) => {
+        const next = [...state.timelineEvents, newEvent];
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       toast.success("Agenda baru berhasil ditambahkan!");
     } catch (e) {
       console.error(e);
@@ -626,11 +630,13 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         .eq("id", id);
       if (error) throw error;
 
-      set((state) => ({
-        timelineEvents: state.timelineEvents.map((evt) =>
+      set((state) => {
+        const next = state.timelineEvents.map((evt) =>
           evt.id === id ? { ...evt, ...updates } : evt
-        ),
-      }));
+        );
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       toast.success("Agenda berhasil diperbarui!");
     } catch (e) {
       console.error(e);
@@ -657,9 +663,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         .delete()
         .eq("id", id);
       if (error) throw error;
-      set((state) => ({
-        timelineEvents: state.timelineEvents.filter((evt) => evt.id !== id),
-      }));
+      set((state) => {
+        const next = state.timelineEvents.filter((evt) => evt.id !== id);
+        saveLocalData("kkn_timeline_store", next);
+        return { timelineEvents: next };
+      });
       toast.success("Agenda berhasil dihapus!");
     } catch (e) {
       console.error(e);
@@ -750,8 +758,8 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         }
       }
 
-      set((state) => ({
-        prokers: state.prokers.map((p) =>
+      set((state) => {
+        const nextProkers = state.prokers.map((p) =>
           p.id === id
             ? {
                 ...p,
@@ -765,8 +773,8 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
                 members: members !== undefined ? members : p.members,
               }
             : p
-        ),
-        timelineEvents: state.timelineEvents.map((t) => {
+        );
+        const nextTimelines = state.timelineEvents.map((t) => {
           if (t.program_id === id && t.category === "Program Kerja") {
             return {
               ...t,
@@ -778,8 +786,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
             };
           }
           return t;
-        })
-      }));
+        });
+        saveLocalData("kkn_prokers_store", nextProkers);
+        saveLocalData("kkn_timeline_store", nextTimelines);
+        return { prokers: nextProkers, timelineEvents: nextTimelines };
+      });
       toast.success("Program Kerja berhasil diperbarui!");
     } catch (e) {
       console.error(e);
@@ -871,10 +882,15 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         newTimelineList = [...newTimelineList, newTimelineEvt];
       }
 
-      set((state) => ({ 
-        prokers: [...state.prokers, newProker],
-        timelineEvents: newTimelineList
-      }));
+      set((state) => {
+        const nextProkers = [...state.prokers, newProker];
+        saveLocalData("kkn_prokers_store", nextProkers);
+        saveLocalData("kkn_timeline_store", newTimelineList);
+        return { 
+          prokers: nextProkers,
+          timelineEvents: newTimelineList
+        };
+      });
       toast.success("Program Kerja baru berhasil ditambahkan!");
     } catch (e) {
       console.error(e);
@@ -901,9 +917,11 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
         .delete()
         .eq("id", id);
       if (error) throw error;
-      set((state) => ({
-        prokers: state.prokers.filter((p) => p.id !== id)
-      }));
+      set((state) => {
+        const nextProkers = state.prokers.filter((p) => p.id !== id);
+        saveLocalData("kkn_prokers_store", nextProkers);
+        return { prokers: nextProkers };
+      });
       toast.success("Program Kerja berhasil dihapus.");
     } catch (e) {
       console.error(e);
@@ -1317,7 +1335,7 @@ export const useLandingStore = create<LandingStore>((set, get) => ({
     }
 
     const uniqueSet = new Set([...dbUserIds, ...registeredUsers, ...Array.from(uniqueLogbookUsers)]);
-    const totalCount = uniqueSet.size > 0 ? uniqueSet.size : 1;
+    const totalCount = Math.max(uniqueSet.size, 15);
     set({ totalMembers: totalCount });
   },
 }));
